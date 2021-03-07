@@ -24,18 +24,30 @@ app.use("/", bodyParser.urlencoded({ "extended": true }));
 //#endregion
 
 //#region GESTIONE RICHIESTE
-app.post("/prova", function (req, res, next) {
+app.post("/ricercaProdottoBarcode", function (req, res, next) {
     console.log(req.body);
-    request('https://world.openfoodfacts.org/api/v0/product/' + req.body.codice.toString() + '.json', async function (error, response, body) {
+    request('https://it.openfoodfacts.org/api/v0/product/' + req.body.codice.toString() + '.json', async function (error, response, body) {
         if (!error && response.statusCode == 200) {
             body = JSON.parse(body);
-            let prodotto = new Object();
-            prodotto.nome = body.product.product_name; //nome del prodotto
-            prodotto.qta = body.product.quantity; //quantità
-            prodotto.tracce = body.product.traces.split(":")[1]; //! gestire se non c'è ne sono
-            prodotto.urlImage = body.product.image_front_url; //immagine del prodotto
-            res.send(JSON.stringify(prodotto));
+			//? Controllo se il risultato è valido oppure no
+            if (body.status != 0) {
+                console.log("prodotto letto correttamente");
+                risposta.errore = false;
+                risposta.nome = body.product.product_name; //nome del prodotto
+                risposta.qta = body.product.quantity; //quantità
+                risposta.tracce = body.product.traces.split(":")[1]; //tracce di alimenti
+                risposta.urlImage = body.product.image_front_url; //immagine del prodotto
+            }
+            else {
+                risposta.errore = true;
+                risposta.messaggioErrore = "Prodotto non trovato o codice invalido. Riprovare";
+            }
         }
+        else {
+            risposta.errore = true;
+            risposta.messaggioErrore = "Errore nella richiesta del server. Riprovare";
+        }
+        res.send(JSON.stringify(risposta));
     });
 });
 //#endregion
