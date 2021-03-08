@@ -54,6 +54,10 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
       'Index 3: School',
       style: optionStyle,
     ),
+    Text(
+      'Index 4: School',
+      style: optionStyle,
+    ),
   ];
 
   void _onItemTapped(int index) {
@@ -67,6 +71,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thispensa'),
+        backgroundColor: Color.fromARGB(255, 55, 149, 82),
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
@@ -76,23 +81,32 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
+            backgroundColor: Color.fromARGB(255, 55, 149, 82),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.food_bank),
             label: 'Dispensa',
+            backgroundColor: Color.fromARGB(255, 55, 149, 82),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            label: 'School',
+            icon: Icon(Icons.analytics),
+            label: 'Analisi',
+            backgroundColor: Color.fromARGB(255, 55, 149, 82),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            label: 'School',
+            icon: Icon(Icons.ballot),
+            label: 'Lista della spesa',
+            backgroundColor: Color.fromARGB(255, 55, 149, 82),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle),
+            label: 'Utente',
+            backgroundColor: Color.fromARGB(255, 55, 149, 82),
           ),
         ],
         currentIndex: _selectedIndex,
-        unselectedItemColor: Colors.black,
-        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.white54,
+        selectedItemColor: Colors.white,
         onTap: _onItemTapped,
       ),
     );
