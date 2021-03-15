@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:client/screens/secondPage/secondPage.dart';
-import 'package:client/widgets/barcode_scan.dart';
+import 'package:client/widgets/barcode_scan2.dart';
 import 'package:client/widgets/dialog.dart';
 
 class FirstPage extends StatelessWidget {
@@ -35,12 +35,8 @@ class FirstPage extends StatelessWidget {
             ],
           ),
         ),
-        // floatingActionButton:AddBarcode() ,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final action =
-                await Dialogs.yesAbortDialog(context, 'My title', 'My Body');
-          },
-        ));
+      floatingActionButton:Barcode() ,
+
+       );
   }
 }

@@ -5,8 +5,11 @@ enum DialogAction { yes, abort }
 class Dialogs {
   static Future<DialogAction> yesAbortDialog(
     BuildContext context,
-    String title,
-    String body,
+    String nome,
+    int qta,
+    String allergie,
+    String image,
+    String scanBarcode,
   ) async {
     final action = await showDialog(
       context: context,
@@ -16,8 +19,18 @@ class Dialogs {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          title: Text(title),
-          content: Text(body),
+          title: Text(nome),
+          content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Text('Quantita: '+qta.toString()),
+              Text('Allergie: '+allergie),
+              Text('link immagine: '+image),
+              Text('Codice: '+scanBarcode),
+              Text('è questo il prodotto che cercavi?'),
+            ],
+          ),
+        ),
           actions: <Widget>[
             FlatButton(
               onPressed: () => Navigator.of(context).pop(DialogAction.abort),
