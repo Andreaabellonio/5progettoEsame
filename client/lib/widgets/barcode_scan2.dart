@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:translator/translator.dart';
 
-
 class Barcode extends StatefulWidget {
   Barcode({Key key}) : super(key: key);
 
@@ -40,16 +39,7 @@ class _BarcodeState extends State<Barcode> {
       print(data);
       if (data["errore"]) {
         print("ERRORE");
-        //faccio la chiamata a foodfacts
-        
-    ProductResult result = await OpenFoodAPIClient.getProductRaw(
-          barcode, OpenFoodFactsLanguage.GERMAN,
-          user: TestConstants.TEST_USER);
-
-if(result.status != 1) {
-	print("Error retreiving the product : ${result.status.errorVerbose}");
-    return;
-}
+        //TODO: faccio la chiamata a foodfacts
 
         _showMyDialog(context, data["messaggioErrore"]);
       } else {
@@ -74,8 +64,6 @@ if(result.status != 1) {
             tracceTradotto,
             data["urlImage"],
             codice);
-            
-        
       }
     });
   }
