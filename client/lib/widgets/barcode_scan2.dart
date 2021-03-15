@@ -25,8 +25,8 @@ class _BarcodeState extends State<Barcode> {
   void _letturaDati(String codice) async {
     print("LETTURA DATI");
     print(codice);
-    var url = "http://192.168.1.53:13377/ricercaProdottoBarcode";
-    var params = {"codice": codice.toString()};
+    var url = "http://93.41.224.64:13377/ricercaProdotto";
+    var params = {"barcode": codice.toString()};
     print(params);
     //? Richiesta post al server node con parametri
     http.post(Uri.encodeFull(url), body: json.encode(params), headers: {
@@ -34,11 +34,23 @@ class _BarcodeState extends State<Barcode> {
       HttpHeaders.contentTypeHeader: "application/json"
     }).then((response) async {
       //? Mappatura del json
+      print(response.body);
       Map data = jsonDecode(response.body);
-      //? Aggiornamento dati sull'applicazione
+      //? Aggiornamento dati sull'applicazioner
       print(data);
       if (data["errore"]) {
         print("ERRORE");
+        //faccio la chiamata a foodfacts
+        
+    ProductResult result = await OpenFoodAPIClient.getProductRaw(
+          barcode, OpenFoodFactsLanguage.GERMAN,
+          user: TestConstants.TEST_USER);
+
+if(result.status != 1) {
+	print("Error retreiving the product : ${result.status.errorVerbose}");
+    return;
+}
+
         _showMyDialog(context, data["messaggioErrore"]);
       } else {
         String nomeTradotto = "";
