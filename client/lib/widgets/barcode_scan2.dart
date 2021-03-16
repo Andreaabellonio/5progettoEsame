@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:translator/translator.dart';
+import 'package:openfoodfacts/openfoodfacts.dart';
 
 class Barcode extends StatefulWidget {
   Barcode({Key key}) : super(key: key);
@@ -24,48 +25,40 @@ class _BarcodeState extends State<Barcode> {
   void _letturaDati(String codice) async {
     print("LETTURA DATI");
     print(codice);
-    var url = "http://93.41.224.64:13377/ricercaProdotto";
-    var params = {"barcode": codice.toString()};
-    print(params);
-    //? Richiesta post al server node con parametri
-    http.post(Uri.encodeFull(url), body: json.encode(params), headers: {
-      "Accept": "application/json",
-      HttpHeaders.contentTypeHeader: "application/json"
-    }).then((response) async {
-      //? Mappatura del json
-      print(response.body);
-      Map data = jsonDecode(response.body);
-      //? Aggiornamento dati sull'applicazioner
-      print(data);
-      if (data["errore"]) {
-        print("ERRORE");
-        //TODO: faccio la chiamata a foodfacts
 
-        _showMyDialog(context, data["messaggioErrore"]);
-      } else {
-        String nomeTradotto = "";
-        List<String> nomeSplit = data["nome"].split(' ').toList();
-        if (nomeSplit.length > 2) {
-          print("TRADUZIONE NOME");
-          nomeTradotto = await traduci(data["nome"]);
-        } else {
-          nomeTradotto = data["nome"];
-        }
-        String tracceTradotto = "";
-        if (data["tracce"] != null) {
-          print("TRADUZIONE TRACCE");
-          tracceTradotto = await traduci(data["tracce"]);
-        }
+    getProduct1(codice, "errore");
+  }
 
-        final action = await Dialogs.yesAbortDialog(
-            context,
-            nomeTradotto,
-            data["qta"] != null ? data["qta"] : "Non disponibile",
-            tracceTradotto,
-            data["urlImage"],
-            codice);
-      }
-    });
+  Future<void> getProduct1(barcode, messErrore) async {
+    ProductQueryConfiguration configuration = ProductQueryConfiguration(barcode,
+        language: OpenFoodFactsLanguage.ITALIAN, fields: [ProductField.ALL]);
+    ProductResult result = await OpenFoodAPIClient.getProduct(configuration);
+
+    if (result.status == 1) {
+      print("lettura dati");
+      String nome = result.product.productName;
+     ///int quantita = int.parse(result.product.quantity);
+      String allergeni = result.product.allergens.toString();
+      String urlImg = result.product.imgSmallUrl;
+      print("dati letti");
+
+      if (nome == "") nome = "errore";
+     // if (quantita == null) quantita = 1;
+      if (allergeni == null) allergeni = "non si sa";
+      if (urlImg == null) urlImg = "non si sa";
+      
+      print("dialog");
+
+      final action = await Dialogs.yesAbortDialog(
+          context,
+          nome,
+          allergeni,
+          urlImg,
+          barcode);
+      
+    } else {
+      _showMyDialog(context, messErrore);
+    }
   }
 
   Future<void> _scansionaBarCode() async {

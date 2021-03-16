@@ -6,7 +6,6 @@ class Dialogs {
   static Future<DialogAction> yesAbortDialog(
     BuildContext context,
     String nome,
-    int qta,
     String allergie,
     String image,
     String scanBarcode,
@@ -21,16 +20,15 @@ class Dialogs {
           ),
           title: Text(nome),
           content: SingleChildScrollView(
-          child: ListBody(
-            children: <Widget>[
-              Text('Quantita: '+qta.toString()),
-              Text('Allergie: '+allergie),
-              Text('link immagine: '+image),
-              Text('Codice: '+scanBarcode),
-              Text('è questo il prodotto che cercavi?'),
-            ],
+            child: ListBody(
+              children: <Widget>[
+                Text('Allergie: ' + allergie),
+                Image.network('$image', fit: BoxFit.contain),
+                Text('Codice: ' + scanBarcode),
+                Text('è questo il prodotto che cercavi?'),
+              ],
+            ),
           ),
-        ),
           actions: <Widget>[
             FlatButton(
               onPressed: () => Navigator.of(context).pop(DialogAction.abort),
