@@ -1,0 +1,22 @@
+[{
+  "_id": {
+    "$oid": "60491abb39c4c1f0512d0c36"
+  },
+  "elementi": [
+    {
+      "idProdotto": {
+        "$oid": "604919f77925722060673935"
+      },
+      "dataInserimento": {
+        "$timestamp": {
+          "t": 0,
+          "i": 0
+        }
+      },
+      "idUtente": {
+        "$oid": "60491b3739c4c1f0512d0c38"
+      },
+      "qta": 0
+    }
+  ]
+}]
