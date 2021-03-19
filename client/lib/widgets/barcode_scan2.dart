@@ -26,7 +26,29 @@ class _BarcodeState extends State<Barcode> {
     print("LETTURA DATI");
     print(codice);
 
-    getProduct1(codice, "errore");
+    //var url = "http://93.41.224.64:13377/ricercaProdotto";
+    var url = "http://10.0.100.117:13377/ricercaProdotto";
+
+    var params = {"barcode": codice.toString()};
+    http.post(Uri.encodeFull(url), body: json.encode(params), headers: {
+      "Accept": "application/json",
+      HttpHeaders.contentTypeHeader: "application/json"
+    }).then((response) async {
+      var data = json.decode(response.body);
+      var prodotto = data['prodotto'];
+      // Map dati = jsonDecode(data[0]);
+
+      if (data["trovato"]) {
+        //c'è sul server percio non devo chiederlo a foodfacts
+        //var datiProdotto = data["prodotto"];
+        print(prodotto.product_name.toString());
+        print(prodotto.traces.toString());
+        final action = await Dialogs.yesAbortDialog(context,
+            prodotto.product_name, prodotto.traces, prodotto.image_url, codice);
+      } else {
+        getProduct1(codice, "errore");
+      }
+    });
   }
 
   Future<void> getProduct1(barcode, messErrore) async {
@@ -37,25 +59,21 @@ class _BarcodeState extends State<Barcode> {
     if (result.status == 1) {
       print("lettura dati");
       String nome = result.product.productName;
-     ///int quantita = int.parse(result.product.quantity);
+
+      ///int quantita = int.parse(result.product.quantity);
       String allergeni = result.product.allergens.toString();
       String urlImg = result.product.imgSmallUrl;
       print("dati letti");
 
       if (nome == "") nome = "errore";
-     // if (quantita == null) quantita = 1;
+      // if (quantita == null) quantita = 1;
       if (allergeni == null) allergeni = "non si sa";
       if (urlImg == null) urlImg = "non si sa";
-      
+
       print("dialog");
 
       final action = await Dialogs.yesAbortDialog(
-          context,
-          nome,
-          allergeni,
-          urlImg,
-          barcode);
-      
+          context, nome, allergeni, urlImg, barcode);
     } else {
       _showMyDialog(context, messErrore);
     }
@@ -66,11 +84,9 @@ class _BarcodeState extends State<Barcode> {
     String barcodeScanRes;
     RegExp exp = RegExp(r"(^[0-9]*$)"); //? regex per il controllo del barcode
     try {
-      do {
-        barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-            "#ff6666", "Esci", true, ScanMode.BARCODE);
-        print(barcodeScanRes);
-      } while (!exp.hasMatch(barcodeScanRes));
+      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+          "#ff6666", "Esci", true, ScanMode.BARCODE);
+      print(barcodeScanRes);
     } on PlatformException {
       barcodeScanRes = 'Errore nello scanner di barcode';
     }
