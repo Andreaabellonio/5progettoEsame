@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:client/widgets/datePicker.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:client/widgets/flutterMobileVision.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -81,6 +81,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                   child: Center(child: Text('${tracce[index]}')),
                 );
               }),
+          MobileVision(),
           Container(
             child: DatePicker(callback),
             padding: EdgeInsets.all(16.0),
@@ -127,11 +128,11 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                     print("fattoooo");
                 });
               }),
-              TextButton(
+          TextButton(
               child: Text("annulla"),
               onPressed: () {
-                 //navigation.pop
-                
+                //navigation.pop
+                Navigator.of(context).pop();
               }),
         ]));
   }
