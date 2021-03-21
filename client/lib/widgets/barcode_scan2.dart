@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dialog.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -7,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:translator/translator.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
+import 'package:client/screens/paginaAggiuntaProdotto/paginaAggiuntaProdotto.dart';
 
 class Barcode extends StatefulWidget {
   Barcode({Key key}) : super(key: key);
@@ -16,66 +16,39 @@ class Barcode extends StatefulWidget {
 }
 
 class _BarcodeState extends State<Barcode> {
-  var nome = "";
-  var qta = "";
-  var allergie = "";
-  var image;
-  var scanBarcode = "";
-
   void _letturaDati(String codice) async {
     print("LETTURA DATI");
     print(codice);
 
-    //var url = "http://93.41.224.64:13377/ricercaProdotto";
-    var url = "http://192.168.137.1:13377/ricercaProdotto";
-
-    var params = {"barcode": codice.toString()};
-    http.post(Uri.encodeFull(url), body: json.encode(params), headers: {
-      "Accept": "application/json",
-      HttpHeaders.contentTypeHeader: "application/json"
-    }).then((response) async {
-      var data = json.decode(response.body);
-      var prodotto = data['prodotto'][0];
-      // Map dati = jsonDecode(data[0]);
-
-      if (data["trovato"]) {
-        //c'è sul server percio non devo chiederlo a foodfacts
-        //var datiProdotto = data["prodotto"];
-        print(prodotto["product_name"].toString());
-        print(prodotto["traces"].toString());
-        final action = await Dialogs.yesAbortDialog(context,
-            prodotto["product_name"], prodotto["traces"], prodotto["image_url"], codice);
-      } else {
-        getProduct1(codice, "errore");
-      }
-    });
+    //funzione che prende il codice usa l'api che crea la scheda di aggiunta
+    getProduct1(codice);
   }
 
-  Future<void> getProduct1(barcode, messErrore) async {
+  Future<void> getProduct1(barcode) async {
     ProductQueryConfiguration configuration = ProductQueryConfiguration(barcode,
         language: OpenFoodFactsLanguage.ITALIAN, fields: [ProductField.ALL]);
     ProductResult result = await OpenFoodAPIClient.getProduct(configuration);
 
     if (result.status == 1) {
-      print("lettura dati");
       String nome = result.product.productName;
-
-      ///int quantita = int.parse(result.product.quantity);
-      String allergeni = result.product.allergens.toString();
       String urlImg = result.product.imgSmallUrl;
-      print("dati letti");
+      String calorie = result.product.nutrimentEnergyUnit == null
+          ? "Non disponibile per questo prodotto"
+          : result.product.nutrimentEnergyUnit;
+      String nutriScore = result.product.nutriscore == null
+          ? "Non disponibile per questo prodotto"
+          : result.product.nutriscore;
+      List<String> tracce = result.product.tracesTags;
 
-      if (nome == "") nome = "errore";
-      // if (quantita == null) quantita = 1;
-      if (allergeni == null) allergeni = "non si sa";
-      if (urlImg == null) urlImg = "non si sa";
-
-      print("dialog");
-
-      final action = await Dialogs.yesAbortDialog(
-          context, nome, allergeni, urlImg, barcode);
-    } else {
-      _showMyDialog(context, messErrore);
+      print(calorie);
+      print(nutriScore);
+      print(tracce);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) =>
+              PaginaAggiuntaProdotto(barcode,nome, urlImg, calorie, nutriScore, tracce),
+        ),
+      );
     }
   }
 
@@ -100,7 +73,7 @@ class _BarcodeState extends State<Barcode> {
     return FloatingActionButton(
       onPressed: _scansionaBarCode,
       child: Icon(Icons.add_a_photo),
-      backgroundColor: Colors.red,
+      backgroundColor: Colors.blue,
     );
   }
 
