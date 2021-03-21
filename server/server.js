@@ -24,6 +24,7 @@ app.use("/", express.urlencoded({ "extended": true }));
 //#endregion
 
 //#region GESTIONE RICHIESTE
+
 /*
 app.post("/ricercaProdottoBarcode", function (req, res, next) {
     console.log(req.body);
@@ -52,6 +53,9 @@ app.post("/ricercaProdottoBarcode", function (req, res, next) {
     });
 });
 */
+
+//? DATI INPUT
+//barcode
 app.post("/ricercaProdotto", function (req, res) {
     console.log("Barcode da ricercare: " + req.body.barcode);
     mongoFunctions.find(res, nomeDb, "prodotti", { barcode: req.body.barcode }, {}, function (data) {
@@ -63,6 +67,27 @@ app.post("/ricercaProdotto", function (req, res) {
     });
 });
 
+//?DATI INPUT
+//barcode
+//idDispensa
+//idUtente
+//qta
+//dataScadenza
+app.post("/inserisciProdottoDispensa", function (req, res) {
+    console.log("INSERIMENTO PRODOTTO IN DISPENSA");
+    /*
+    //? Con upsert se esiste fa l'update se non esiste lo inserisce
+    mongoFunctions.findAndUpdate(res, nomeDb, "prodotti", { barcode: req.body.prodotto.barcode }, { $set: req.body.prodotto }, { upsert: true }, function (data) {
+        mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $push: { "elementi": { idProdotto: data.value._id, dataInserimento: new Date(Date.now()), dataScadenza: new Date(req.body.dataScadenza), idUtente: mongo.ObjectID(req.body.idUtente), qta: req.body.qta } } }, {}, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });*/
+    //? Con upsert se esiste fa l'update se non esiste lo inserisce
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $push: { "elementi": { idProdotto: req.body.barcode, dataInserimento: new Date(Date.now()), dataScadenza: new Date(req.body.dataScadenza), idUtente: mongo.ObjectID(req.body.idUtente), qta: req.body.qta } } }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+/*
 
 app.post("/inserisciProdotto", function (req, res) {
     //? cerco se il prodotto è già presente nel db
@@ -91,6 +116,30 @@ app.post("/inserisciProdotto", function (req, res) {
                 });
             });
         }
+    });
+});*/
+
+//?DATI INPUT
+//idDispensa
+app.post("/leggiDispensa", function (req, res) {
+    mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false, prodotto: data }));
+    });
+});
+
+//?DATI INPUT
+//oggetto prodotto
+app.post("/aggiornaProdotto", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "prodotti", { barcode: req.body.barcode }, { $set: req.body.prodotto }, { upsert: true }, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+//? DATI INPUT
+//barcode
+app.post("/eliminaProdotto", function (res, req) {
+    mongoFunctions.deleteMany(res, nomeDb, "prodotti", { barcode: req.body.barcode }, function (data) {
+        res.send(JSON.stringify({ errore: false }));
     });
 });
 
