@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 
 class DatePicker extends StatefulWidget {
   Function(TextEditingController) callback;
-
-  DatePicker(this.callback);
+  String data;
+  DatePicker(this.data, this.callback);
 
   @override
-  _DatePickerState createState() => _DatePickerState();
+  _DatePickerState createState() => _DatePickerState(data);
 }
 
 class _DatePickerState extends State<DatePicker> {
   final dateController = TextEditingController();
+
+  _DatePickerState(data) {
+    
+      dateController.text = data;
+   
+  }
 
   @override
   void dispose() {

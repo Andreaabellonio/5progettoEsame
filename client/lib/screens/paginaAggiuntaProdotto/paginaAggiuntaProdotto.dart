@@ -29,6 +29,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
   String calorie;
   String nutriScore;
   List<String> tracce;
+  String aaaaa = "aaa";
 
   var controllerQuantita = TextEditingController();
   var controllerData = TextEditingController();
@@ -36,6 +37,15 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
   callback(nuovoController) {
     setState(() {
       controllerData = nuovoController;
+    });
+  }
+
+
+  callback2(stringa) {
+   
+
+    setState(() {
+      controllerData.text = stringa;
     });
   }
 
@@ -81,9 +91,9 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                   child: Center(child: Text('${tracce[index]}')),
                 );
               }),
-          MobileVision(),
+          MobileVision(callback2),
           Container(
-            child: DatePicker(callback),
+            child: DatePicker(controllerData.text, callback),
             padding: EdgeInsets.all(16.0),
           ),
           Container(
@@ -97,6 +107,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                   ]),
               padding: EdgeInsets.all(16.0)),
           Image.network('$urlImmagine', fit: BoxFit.contain),
+          Text(aaaaa),
           TextButton(
               child: Text("aggiungi"),
               onPressed: () {
@@ -126,6 +137,9 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                     print("NOOOOOOOOOOOOOOOOOOOOOOOo");
                   else
                     print("fattoooo");
+
+
+                  Navigator.of(context).pop();
                 });
               }),
           TextButton(

@@ -2,7 +2,9 @@ import 'package:flutter_mobile_vision/flutter_mobile_vision.dart';
 import 'package:flutter/material.dart';
 
 class MobileVision extends StatefulWidget {
-  MobileVision({Key key}) : super(key: key);
+
+  Function(String) callback;
+  MobileVision(this.callback);
 
   @override
   _MobileVisionState createState() => _MobileVisionState();
@@ -44,8 +46,8 @@ class _MobileVisionState extends State<MobileVision> {
         f = exp.end;
       }
     }
-
-    setState(() => _textsOcr = testo.substring(i, f));
+     print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEGGEG");
+    widget.callback(testo.substring(i, f));
   }
 
   @override

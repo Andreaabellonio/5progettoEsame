@@ -8,18 +8,18 @@ class FirstPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Routing App'),
+          title: Text('ThisPensa'),
         ),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                'First Page',
+                'Benvenuto',
                 style: TextStyle(fontSize: 50),
               ),
               RaisedButton(
-                child: Text('Go to second'),
+                child: Text('Fatti un viaggio'),
                 onPressed: () {
                   // Pushing a route directly, WITHOUT using a named route
                   Navigator.of(context).push(
