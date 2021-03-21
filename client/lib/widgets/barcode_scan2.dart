@@ -19,6 +19,8 @@ class _BarcodeState extends State<Barcode> {
   void _letturaDati(String codice) async {
     print("LETTURA DATI");
     print(codice);
+
+    //funzione che prende il codice usa l'api che crea la scheda di aggiunta
     getProduct1(codice);
   }
 
@@ -44,7 +46,7 @@ class _BarcodeState extends State<Barcode> {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) =>
-              PaginaAggiuntaProdotto(nome, urlImg, calorie, nutriScore, tracce),
+              PaginaAggiuntaProdotto(barcode,nome, urlImg, calorie, nutriScore, tracce),
         ),
       );
     }
