@@ -42,7 +42,19 @@ module.exports.find = function find(res, nomeDb, collezione, query, select, call
     });
 }
 
-module.exports.insert = function insert(res, nomeDb, collezione, elems, callback) {
+module.exports.insertOne = function insert(res, nomeDb, collezione, elems, callback) {
+    apriConnessione(res, nomeDb, function (connessione, database) {
+        database.collection(collezione).insertOne(elems, function (err, risposta) {
+            if (err) errore(res, "Insert", err);
+            else {
+                callback(risposta);
+            }
+            connessione.close();
+        });
+    });
+}
+
+module.exports.insertMany = function insert(res, nomeDb, collezione, elems, callback) {
     apriConnessione(res, nomeDb, function (connessione, database) {
         database.collection(collezione).insertMany(elems, function (err, risposta) {
             if (err) errore(res, "Insert", err);

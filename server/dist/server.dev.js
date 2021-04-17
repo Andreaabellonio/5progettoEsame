@@ -6,6 +6,8 @@ var express = require("express");
 
 var mongo = require("mongodb");
 
+var session = require("express-session");
+
 var mongoFunctions = require("./mongo.js"); //? ISTANZA MONGO CLIENT
 
 
@@ -16,7 +18,35 @@ var app = express();
 app.listen(13377, function () {
   mongoFunctions.settings(url, mongo.MongoClient);
   console.log("SERVER AVVIATO SULLA PORTA 13377");
-}); //? GESTIONE RISORSE STATICHE
+}); //? INIZIALIZZAZIONE SESSION
+
+app.use(session({
+  secret: "passwordsegretissima",
+  //chiave per crittografare il cookie
+  name: "sessionId",
+  // proprietà legate allo Store
+  resave: false,
+  //forza il salvataggio della session anche se non viene modificata da ulteriori richieste
+  saveUninitialized: false,
+  //forza il salvataggio anche di session nuove o non inizializzate
+  cookie: {
+    secure: false,
+    // true per accessi https
+    maxAge: 24 * 60 * 60 * 1000,
+    // durata in msec
+    expires: false
+  }
+}));
+/*
+//? CONTROLLO SESSION SU TUTTE LE RICHIESTE
+app.use("/", function (req, res, next) {
+    if (req.session.auth)
+        next(); //se autenticato passa alle funzioni successive
+    else
+        res.send(JSON.stringify({ errore: true, messaggio:"Accesso vietato, non sei autenticato"}));
+});
+*/
+//? GESTIONE RISORSE STATICHE
 
 app.use("/", express["static"]("./static")); //? GESTIONE CHIAMATE POST
 
@@ -25,6 +55,38 @@ app.use("/", express.urlencoded({
   "extended": true
 })); //#endregion
 //#region GESTIONE RICHIESTE
+
+app.post("/test", function (req, res) {
+  res.send(JSON.stringify(['nome', 'cognome']));
+});
+/*
+app.post("/ricercaProdottoBarcode", function (req, res, next) {
+    console.log(req.body);
+    request('https://it.openfoodfacts.org/api/v0/product/' + req.body.codice.toString() + '.json', async function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            body = JSON.parse(body);
+            //? Controllo se il risultato è valido oppure no
+            if (body.status != 0) {
+                console.log("prodotto letto correttamente");
+                risposta.errore = false;
+                risposta.nome = body.product.product_name; //nome del prodotto
+                risposta.qta = body.product.quantity; //quantità
+                risposta.tracce = body.product.traces.split(":")[1]; //tracce di alimenti
+                risposta.urlImage = body.product.image_front_url; //immagine del prodotto
+            }
+            else {
+                risposta.errore = true;
+                risposta.messaggioErrore = "Prodotto non trovato o codice invalido. Riprovare";
+            }
+        }
+        else {
+            risposta.errore = true;
+            risposta.messaggioErrore = "Errore nella richiesta del server. Riprovare";
+        }
+        res.send(JSON.stringify(risposta));
+    });
+});
+*/
 //? DATI INPUT
 //barcode
 
@@ -43,33 +105,51 @@ app.post("/ricercaProdotto", function (req, res) {
     }));
   });
 }); //?DATI INPUT
-//prodotto(che contiene tutti i dati come da database)
+//barcode
 //idDispensa
 //idUtente
 //qta
 //dataScadenza
 
 app.post("/inserisciProdottoDispensa", function (req, res) {
-  /*
-  //? Con upsert se esiste fa l'update se non esiste lo inserisce
-  mongoFunctions.findAndUpdate(res, nomeDb, "prodotti", { barcode: req.body.prodotto.barcode }, { $set: req.body.prodotto }, { upsert: true }, function (data) {
-      mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $push: { "elementi": { idProdotto: data.value._id, dataInserimento: new Date(Date.now()), dataScadenza: new Date(req.body.dataScadenza), idUtente: mongo.ObjectID(req.body.idUtente), qta: req.body.qta } } }, {}, function (data) {
-          res.send(JSON.stringify({ errore: false }));
-      });
-  });*/
-  //? Con upsert se esiste fa l'update se non esiste lo inserisce
+  var dato = {
+    idProdotto: req.body.barcode,
+    dataInserimento: new Date(Date.now()),
+    dataScadenza: new Date(req.body.dataScadenza),
+    idUtente: mongo.ObjectID(req.body.idUtente),
+    qta: req.body.qta
+  };
+  console.log("INSERIMENTO PRODOTTO IN DISPENSA"); //? Con upsert se esiste fa l'update se non esiste lo inserisce
+
   mongoFunctions.update(res, nomeDb, "dispense", {
     _id: mongo.ObjectID(req.body.idDispensa)
   }, {
     $push: {
-      "elementi": {
-        idProdotto: req.body.barcode,
-        dataInserimento: new Date(Date.now()),
-        dataScadenza: new Date(req.body.dataScadenza),
-        idUtente: mongo.ObjectID(req.body.idUtente),
-        qta: req.body.qta
-      }
+      "elementi": dato
     }
+  }, {}, function (data) {
+    res.send(JSON.stringify({
+      errore: false
+    }));
+  });
+}); //?DATI INPUT
+//barcode
+//idDispensa
+//idUtente
+//qta
+//dataScadenza
+
+app.post("/aggiornaProdottoDispensa", function (req, res) {
+  var dato = {
+    idProdotto: req.body.barcode,
+    dataScadenza: new Date(req.body.dataScadenza),
+    idUtente: mongo.ObjectID(req.body.idUtente),
+    qta: req.body.qta
+  };
+  mongoFunctions.update(res, nomeDb, "dispense", {
+    _id: mongo.ObjectID(req.body.idDispensa)
+  }, {
+    $set: dato
   }, {}, function (data) {
     res.send(JSON.stringify({
       errore: false
@@ -79,12 +159,15 @@ app.post("/inserisciProdottoDispensa", function (req, res) {
 //idDispensa
 
 app.post("/leggiDispensa", function (req, res) {
+  console.log("LETTURA DISPENSA");
   mongoFunctions.find(res, nomeDb, "dispense", {
     _id: mongo.ObjectID(req.body.idDispensa)
-  }, {}, function (data) {
+  }, {
+    elementi: 1
+  }, function (data) {
     res.send(JSON.stringify({
       errore: false,
-      prodotto: data
+      prodotti: data[0]["elementi"]
     }));
   });
 }); //?DATI INPUT
@@ -112,6 +195,61 @@ app.post("/eliminaProdotto", function (res, req) {
     res.send(JSON.stringify({
       errore: false
     }));
+  });
+}); //? DATI INPUT
+//email
+//username
+
+app.post("/login", function (res, req) {
+  mongoFunctions.find(res, nomeDb, "utenti", {
+    email: req.body.email,
+    password: req.body.password
+  }, {}, function (data) {
+    if (data.lenght == 1) {
+      req.session.auth = true;
+      res.send(JSON.stringify({
+        errore: false
+      }));
+    } else {
+      res.send(JSON.stringify({
+        errore: true
+      }));
+    }
+  });
+});
+app.post("/logout", function (req, res) {
+  req.session.destroy();
+}); //? DATI INPUT
+// nome
+// cognome
+// email
+// password
+//? DATI OUTPUT
+// idListaDellaSpesa
+// idDispensa
+
+app.post("/registrazione", function (req, res) {
+  var dato = {
+    dataCreazione: new Date(Date.now()),
+    nome: req.body.nome,
+    cognome: req.body.cognome,
+    email: req.body.email,
+    password: req.body.password
+  };
+  mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", {}, function (listaDellaSpesa) {
+    mongoFunctions.insertOne(res, nomeDb, "dispense", {}, function (dispense) {
+      dato.listeDellaSpesa.push(listaDellaSpesa._id);
+      dato.dispense.push(dispense._id);
+      mongoFunctions.insertOne(res, nomeDb, "utenti", {
+        dato: dato
+      }, function (data) {
+        res.send(JSON.stringify({
+          errore: false,
+          listaDellaSpesa: dato.listeDellaSpesa,
+          dispensa: dato.dispense
+        }));
+      });
+    });
   });
 }); //#endregion
 //#region FUNZIONI AGGIUNTIVE
