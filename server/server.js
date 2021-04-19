@@ -6,7 +6,7 @@ const session = require("express-session");
 const mongoFunctions = require("./mongo.js");
 const admin = require("firebase-admin");
 
-const serviceAccount = require("./testauththispensa-firebase-adminsdk-xjr1j-37354e6a04.json");
+const serviceAccount = require("./testauththispensa-firebase-adminsdk-xjr1j-7141ac1a07.json");
 
 //? ISTANZA MONGO CLIENT
 const url = "mongodb://localhost:27017/";
@@ -14,7 +14,7 @@ const nomeDb = "thispensa";
 
 //? CREAZIONE DEL SERVER
 const app = express();
-app.listen(13377, function () {
+app.listen(23377, function () {
     mongoFunctions.settings(url, mongo.MongoClient);
     console.log("SERVER AVVIATO SULLA PORTA 13377");
 });
@@ -37,7 +37,95 @@ app.use(session({
         expires: false
     }
 }));
-/*
+
+//? GESTIONE CHIAMATE POST
+app.use("/", express.json());
+app.use("/", express.urlencoded({ "extended": true }));
+
+//#region gestioneLogin&Registrazione
+//!SONO PRIMA DEL CONTROLLO SULLA SESSION PERCHE' NON E' ANCORA AUTENTICATO
+//? DATI INPUT
+//email
+//username
+app.post("/login", function (req, res) {
+    admin.auth().getUser(req.body.uid).then((userRecord) => {
+        mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, function (data) {
+            if (data.lenght == 1) {
+                req.session.auth = true;
+                res.send(JSON.stringify({ errore: false }));
+            }
+            else
+                res.send(JSON.stringify({ errore: true }));
+        });
+    })
+        .catch((error) => {
+            if (error.errorInfo.code == "auth/user-not-found")
+                res.send(JSON.stringify({ errore: true, messaggio: "Utente non trovato" }));
+        });
+});
+
+//? DATI INPUT
+// nome
+// cognome
+// email
+//? DATI OUTPUT
+// idListaDellaSpesa
+// idDispensa
+app.post("/registrazione", function (req, res) {
+    admin.auth().getUser(req.body.uid).then((userRecord) => {
+        let dato = {
+            dataCreazione: new Date(Date.now()),
+            nome: req.body.nome,
+            cognome: req.body.cognome,
+            email: userRecord.email,
+        };
+        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", {}, function (listaDellaSpesa) {
+            mongoFunctions.insertOne(res, nomeDb, "dispense", {}, function (dispense) {
+                dato.listeDellaSpesa = listaDellaSpesa.insertedId;
+                dato.dispense = dispense.insertedId;
+                mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
+                    res.send(JSON.stringify({ errore: false, listaDellaSpesa: dato.listeDellaSpesa, dispensa: dato.dispense }));
+                });
+            });
+        });
+    })
+        .catch((error) => {
+            res.send(JSON.stringify({ errore: true }));
+        });
+});
+
+//? chiamata sia per login sia per registrazione, non cambia
+app.post("/collegamentoAccountGoogle", function (req, res) {
+    admin.auth().getUser(req.body.uid).then((userRecord) => {
+        let dato = {
+            dataCreazione: new Date(Date.now()),
+            nome: userRecord.displayName,
+            email: userRecord.email,
+        };
+        mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, function (utente) {
+            if (utente.length == 1) {
+                req.session.auth = true;
+            }
+            else {
+                mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", {}, function (listaDellaSpesa) {
+                    mongoFunctions.insertOne(res, nomeDb, "dispense", {}, function (dispense) {
+                        dato.listeDellaSpesa = listaDellaSpesa.insertedId;
+                        dato.dispense = dispense.insertedId;
+                        mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
+                            req.session.auth = true;
+                            res.send(JSON.stringify({ errore: false, listaDellaSpesa: dato.listeDellaSpesa, dispensa: dato.dispense }));
+                        });
+                    });
+                });
+            }
+        });
+    })
+        .catch((error) => {
+            res.send(JSON.stringify({ errore: true }));
+        });
+});
+//#endregion
+
 //? CONTROLLO SESSION SU TUTTE LE RICHIESTE
 app.use("/", function (req, res, next) {
     if (req.session.auth)
@@ -45,13 +133,10 @@ app.use("/", function (req, res, next) {
     else
         res.send(JSON.stringify({ errore: true, messaggio: "Accesso vietato, non sei autenticato" }));
 });
-*/
+
 //? GESTIONE RISORSE STATICHE
 app.use("/", express.static("./static"));
 
-//? GESTIONE CHIAMATE POST
-app.use("/", express.json());
-app.use("/", express.urlencoded({ "extended": true }));
 //#endregion
 
 //#region GESTIONE RICHIESTE
@@ -161,90 +246,9 @@ app.post("/eliminaProdotto", function (req, res) {
     });
 });
 
-//? DATI INPUT
-//email
-//username
-app.post("/login", function (req, res) {
-    admin.auth().getUser(req.body.uid).then((userRecord) => {
-        mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, function (data) {
-            if (data.lenght == 1) {
-                req.session.auth = true;
-                res.send(JSON.stringify({ errore: false }));
-            }
-            else
-                res.send(JSON.stringify({ errore: true }));
-        });
-    })
-        .catch((error) => {
-            if (error.errorInfo.code == "auth/user-not-found")
-                res.send(JSON.stringify({ errore: true, messaggio: "Utente non trovato" }));
-        });
-});
-
+//? LOGOUT
 app.post("/logout", function (req, res) {
     req.session.destroy();
-});
-
-//? DATI INPUT
-// nome
-// cognome
-// email
-//? DATI OUTPUT
-// idListaDellaSpesa
-// idDispensa
-app.post("/registrazione", function (req, res) {
-    admin.auth().getUser(req.body.uid).then((userRecord) => {
-        let dato = {
-            dataCreazione: new Date(Date.now()),
-            nome: req.body.nome,
-            cognome: req.body.cognome,
-            email: userRecord.email,
-        };
-        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", {}, function (listaDellaSpesa) {
-            mongoFunctions.insertOne(res, nomeDb, "dispense", {}, function (dispense) {
-                dato.listeDellaSpesa.push(listaDellaSpesa._id);
-                dato.dispense.push(dispense._id);
-                mongoFunctions.insertOne(res, nomeDb, "utenti", { dato }, function (data) {
-                    res.send(JSON.stringify({ errore: false, listaDellaSpesa: dato.listeDellaSpesa, dispensa: dato.dispense }));
-                });
-            });
-        });
-    })
-        .catch((error) => {
-            res.send(JSON.stringify({ errore: true }));
-        });
-});
-
-//? chiamata sia per login sia per registrazione, non cambia
-app.post("/collegamentoAccountGoogle", function (req, res) {
-    admin.auth().getUser(req.body.uid).then((userRecord) => {
-        let dato = {
-            dataCreazione: new Date(Date.now()),
-            nome: userRecord.displayName,
-            email: userRecord.email,
-        };
-        mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, function (utente) {
-            console.log("PASODPAOSD");
-            if (utente.length == 1) {
-                req.session.auth = true;
-            }
-            else {
-                mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", {}, function (listaDellaSpesa) {
-                    mongoFunctions.insertOne(res, nomeDb, "dispense", {}, function (dispense) {
-                        dato.listeDellaSpesa = listaDellaSpesa.insertedId;
-                        dato.dispense = dispense.insertedId;
-                        mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
-                            req.session.auth = true;
-                            res.send(JSON.stringify({ errore: false, listaDellaSpesa: dato.listeDellaSpesa, dispensa: dato.dispense }));
-                        });
-                    });
-                });
-            }
-        });
-    })
-        .catch((error) => {
-            res.send(JSON.stringify({ errore: true }));
-        });
 });
 //#endregion
 
