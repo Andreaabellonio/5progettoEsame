@@ -12,14 +12,23 @@ class PaginaAggiuntaProdotto extends StatefulWidget {
   String urlImmagine;
   String calorie;
   String nutriScore;
+  String ingredienti;
+  String qta;
   List<String> tracce;
 
   PaginaAggiuntaProdotto(this.barcode, this.nomeProdotto, this.urlImmagine,
-      this.calorie, this.nutriScore, this.tracce);
+      this.calorie, this.nutriScore, this.tracce, this.ingredienti, this.qta);
 
   @override
   _PaginaAggiuntaProdottoState createState() => _PaginaAggiuntaProdottoState(
-      barcode, nomeProdotto, urlImmagine, calorie, nutriScore, tracce);
+      barcode,
+      nomeProdotto,
+      urlImmagine,
+      calorie,
+      nutriScore,
+      tracce,
+      ingredienti,
+      qta);
 }
 
 class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
@@ -28,6 +37,8 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
   String urlImmagine;
   String calorie;
   String nutriScore;
+  String ingredienti;
+  String qta;
   List<String> tracce;
   String aaaaa = "aaa";
 
@@ -40,17 +51,26 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
     });
   }
 
-
   callback2(stringa) {
-   
-
     setState(() {
-      controllerData.text = stringa;
+      if (stringa != "")
+        controllerData.text = DateTime.parse(stringa).toString().split(' ')[0];
+      else {
+        controllerData.text = "";
+        _showMyDialog(context, "Data non riconosciuta.\nRiprovare");
+      }
     });
   }
 
-  _PaginaAggiuntaProdottoState(this.barcode, this.nomeProdotto,
-      this.urlImmagine, this.calorie, this.nutriScore, this.tracce);
+  _PaginaAggiuntaProdottoState(
+      this.barcode,
+      this.nomeProdotto,
+      this.urlImmagine,
+      this.calorie,
+      this.nutriScore,
+      this.tracce,
+      this.ingredienti,
+      this.qta);
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +100,13 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
             ),
             padding: EdgeInsets.all(16.0),
           ),
+          Container(
+            child: Text(
+              "Ingredienti: " + ingredienti,
+              style: TextStyle(fontSize: 20),
+            ),
+            padding: EdgeInsets.all(16.0),
+          ),
           Text("puo contenere tracce di:"),
           ListView.builder(
               shrinkWrap: true,
@@ -93,7 +120,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
               }),
           MobileVision(callback2),
           Container(
-            child: DatePicker(controllerData.text, callback),
+            child: DatePicker(controllerData, callback),
             padding: EdgeInsets.all(16.0),
           ),
           Container(
@@ -107,7 +134,6 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                   ]),
               padding: EdgeInsets.all(16.0)),
           Image.network('$urlImmagine', fit: BoxFit.contain),
-          Text(aaaaa),
           TextButton(
               child: Text("aggiungi"),
               onPressed: () {
@@ -115,7 +141,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                 String data = controllerData.text;
                 int quantita = int.parse(controllerQuantita.text);
                 print(data + " " + quantita.toString());
-                var url = "http://93.41.224.64:13377/inserisciProdottoDispensa";
+                var url = "http://93.41.224.64:13377";
                 var params = {
                   "idUtente": "60491b3739c4c1f0512d0c38",
                   "idDispensa": "60491bb339c4c1f0512d0c3a",
@@ -125,7 +151,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                 };
                 print(params);
                 //? Richiesta post al server node con parametri
-                http.post(Uri.encodeFull(url),
+                http.post(Uri.http(url, "/inserisciProdottoDispensa"),
                     body: json.encode(params),
                     headers: {
                       "Accept": "application/json",
@@ -138,7 +164,6 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                   else
                     print("fattoooo");
 
-
                   Navigator.of(context).pop();
                 });
               }),
@@ -149,5 +174,30 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                 Navigator.of(context).pop();
               }),
         ]));
+  }
+
+  Future<void> _showMyDialog(BuildContext context, String testo) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Errore'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[Text(testo)],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

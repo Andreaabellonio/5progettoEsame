@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:translator/translator.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:client/screens/paginaAggiuntaProdotto/paginaAggiuntaProdotto.dart';
@@ -17,6 +15,8 @@ class Barcode extends StatefulWidget {
 
 class _BarcodeState extends State<Barcode> {
   void _letturaDati(String codice) async {
+    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
+    EasyLoading.show();
     print("LETTURA DATI");
     print(codice);
 
@@ -25,31 +25,89 @@ class _BarcodeState extends State<Barcode> {
   }
 
   Future<void> getProduct1(barcode) async {
-    ProductQueryConfiguration configuration = ProductQueryConfiguration(barcode,
-        language: OpenFoodFactsLanguage.ITALIAN, fields: [ProductField.ALL]);
-    ProductResult result = await OpenFoodAPIClient.getProduct(configuration);
+    try {
+      ProductQueryConfiguration configuration = ProductQueryConfiguration(
+          barcode,
+          language: OpenFoodFactsLanguage.ITALIAN,
+          fields: [ProductField.ALL]);
+      ProductResult result = await OpenFoodAPIClient.getProduct(configuration);
 
-    if (result.status == 1) {
-      String nome = result.product.productName;
-      String urlImg = result.product.imgSmallUrl;
-      String calorie = result.product.nutrimentEnergyUnit == null
-          ? "Non disponibile per questo prodotto"
-          : result.product.nutrimentEnergyUnit;
-      String nutriScore = result.product.nutriscore == null
-          ? "Non disponibile per questo prodotto"
-          : result.product.nutriscore;
-      List<String> tracce = result.product.tracesTags;
-
-      print(calorie);
-      print(nutriScore);
-      print(tracce);
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) =>
-              PaginaAggiuntaProdotto(barcode,nome, urlImg, calorie, nutriScore, tracce),
-        ),
-      );
+      if (result.status == 1) {
+        String nome =
+            await traduci(result.product.productName, result.product.lang);
+        String urlImg = result.product.imgSmallUrl == null
+            ? "Non disponibile per questo prodotto"
+            : result.product.imgSmallUrl;
+        String calorie;
+        try {
+          calorie = result.product.nutriments.energyKcal.toString() == null
+              ? "Non disponibile per questo prodotto"
+              : result.product.nutriments.energyKcal.toString() +
+                  " " +
+                  result.product.nutriments.energyKcalUnit
+                      .toString()
+                      .split('.')[1];
+        } catch (e) {
+          calorie = "Non disponibile per questo prodotto";
+        }
+        String nutriScore = result.product.nutriscore == null
+            ? "Non disponibile per questo prodotto"
+            : result.product.nutriscore;
+        List<String> tracce = result.product.allergens.ids == null
+            ? "Non disponibile per questo prodotto"
+            : result.product.allergens.ids;
+        List<String> tracceTradotte = new List<String>();
+        if (tracce.length > 0) {
+          for (String allergen in tracce) {
+            tracceTradotte.add(await traduci(
+                allergen.split(':')[1], null, allergen.split(':')[0]));
+          }
+        } else
+          tracceTradotte.add("Non disponibile per questo prodotto");
+        String ingredienti = "";
+        if (result.product.ingredientsTextEN != null)
+          ingredienti = result.product.ingredientsTextEN == null
+              ? "Non disponibile per questo prodotto"
+              : await traduci(result.product.ingredientsTextEN, null, "en");
+        else
+          ingredienti = result.product.ingredientsText == ""
+              ? "Non disponibile per questo prodotto"
+              : await traduci(
+                  result.product.ingredientsText, result.product.lang);
+        String qta = result.product.quantity == null
+            ? "Non disponibile per questo prodotto"
+            : result.product.quantity.toString();
+        EasyLoading.dismiss();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PaginaAggiuntaProdotto(barcode, nome, urlImg,
+                calorie, nutriScore, tracceTradotte, ingredienti, qta),
+          ),
+        );
+      } else {
+        EasyLoading.dismiss();
+        _showMyDialog(context, "Prodotto non trovato nel database");
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      _showMyDialog(context, "Errore nella ricerca dei dati");
     }
+  }
+
+  //con [] indico i parametri opzionali
+  Future<String> traduci(String input,
+      [OpenFoodFactsLanguage language, String fromLang]) async {
+    if (input != "" && input != null) {
+      if (language != null) fromLang = rilevaLingua(language);
+      if (fromLang != "it") {
+        final translator = GoogleTranslator();
+        var translation =
+            await translator.translate(input, from: fromLang, to: 'it');
+        return translation.toString();
+      } else
+        return input;
+    } else
+      return input;
   }
 
   Future<void> _scansionaBarCode() async {
@@ -65,7 +123,7 @@ class _BarcodeState extends State<Barcode> {
     }
     if (!mounted) return;
     print(barcodeScanRes);
-    await _letturaDati(barcodeScanRes);
+    if (barcodeScanRes != "-1") await _letturaDati(barcodeScanRes);
   }
 
   @override
@@ -75,18 +133,6 @@ class _BarcodeState extends State<Barcode> {
       child: Icon(Icons.add_a_photo),
       backgroundColor: Colors.blue,
     );
-  }
-
-  void test() async {
-    String testo = "HELLO WORLD";
-    String testoTradotto = await traduci(testo);
-    _showMyDialog(context, testoTradotto);
-  }
-
-  Future<String> traduci(String input) async {
-    final translator = GoogleTranslator();
-    var translation = await translator.translate(input, to: 'it');
-    return translation.toString();
   }
 
   Future<void> _showMyDialog(BuildContext context, String testo) async {
@@ -112,5 +158,24 @@ class _BarcodeState extends State<Barcode> {
         );
       },
     );
+  }
+}
+
+String rilevaLingua(OpenFoodFactsLanguage lang) {
+  switch (lang) {
+    case OpenFoodFactsLanguage.FRENCH:
+      return "fr";
+      break;
+    case OpenFoodFactsLanguage.ENGLISH:
+      return "en";
+      break;
+    case OpenFoodFactsLanguage.SPANISH:
+      return "es";
+      break;
+    case OpenFoodFactsLanguage.ITALIAN:
+      return "it";
+      break;
+    default:
+      return "auto";
   }
 }

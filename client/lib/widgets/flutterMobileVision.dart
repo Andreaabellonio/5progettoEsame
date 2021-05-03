@@ -2,7 +2,6 @@ import 'package:flutter_mobile_vision/flutter_mobile_vision.dart';
 import 'package:flutter/material.dart';
 
 class MobileVision extends StatefulWidget {
-
   Function(String) callback;
   MobileVision(this.callback);
 
@@ -32,22 +31,70 @@ class _MobileVisionState extends State<MobileVision> {
     }
 
     if (!mounted) return;
-    int i = 0;
-    int f = 0;
     String testo = "";
+    String app = "";
 
+    //?L'obiettivo è formattare tutte i tipi di date to AAAAMMGG
+    /*
+    var listaReg = [
+      "^([0-1][0-9]) [0-9]{4}\$", //MM AAAA
+      "^([0-1][0-9])-[0-9]{4}\$", //MM-AAAA
+      "^(([0-9]|[0-3][0-9])\/([0-1][0-9])\/[0-9]{2,4})\$", //GG/MM/AAAA anche con AA
+      "^(([0-9]|[0-3][0-9])\.([0-1][0-9])\.[0-9]{4})\$", //GG.MM.AAAA
+      "^([0-3][0-9] ([0-1][0-9]) [0-9]{2,4})\$", //GG MM AAAA anche AA
+      "^([0-9]{2,4} ([0-1][0-9]) [0-3][0-9])\$" //AAAA MM GG anche AA
+    ];
+    */
     for (OcrText t in texts) {
-      RegExpMatch exp = RegExp(
-              "([0-1][0-9] [0-9]{4})|([0-1][0-9]-[0-9]{4})|([0-3][0-9]/[0-1][0-9]/[0-9]{4})|([0-3][0-9]\.[0-1][0-9]\.[0-9]{4})|([0-3][0-9]/[0-1][0-9]/[0-9]{2})|([0-3][0-9] [0-1][0-9] [0-9]{2,4})|([0-9]{2,4} [0-1][0-9] [0-3][0-9])")
+      RegExpMatch exp =
+          RegExp("^([0-1][0-9]) [0-9]{4}\$").firstMatch(t.value);
+      if (exp != null) {
+        app = t.value;
+        testo = app.split(' ')[1] +
+            app.split(' ')[0] +
+            "01"; //metto il primo giorno del mese
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp("^([0-1][0-9])-[0-9]{4}\$").firstMatch(t.value);
+      if (exp != null) {
+        app = t.value;
+        testo = app.split('-')[1] +
+            app.split('-')[0] +
+            "01"; //metto il primo giorno del mese
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp("^(([0-9]|[0-3][0-9])\/([0-1][0-9])\/[0-9]{2,4})\$")
           .firstMatch(t.value);
       if (exp != null) {
-        testo = t.value;
-        i = exp.start;
-        f = exp.end;
+        app = t.value;
+        testo = app.split('/')[2] + app.split('/')[1] + app.split('/')[0];
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp("^(([0-9]|[0-3][0-9])\.([0-1][0-9])\.[0-9]{4})\$")
+          .firstMatch(t.value);
+      if (exp != null) {
+        app = t.value;
+        testo = app.split('.')[2] + app.split('.')[1] + app.split('.')[0];
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp("^([0-3][0-9] ([0-1][0-9]) [0-9]{2,4})\$")
+          .firstMatch(t.value);
+      if (exp != null) {
+        app = t.value;
+        testo = app.split(' ')[2] + app.split(' ')[1] + app.split(' ')[0];
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp("^([0-9]{2,4} ([0-1][0-9]) [0-3][0-9])\$")
+          .firstMatch(t.value);
+      if (exp != null) {
+        app = t.value;
+        testo = app.replaceAll(' ', '');
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
       }
     }
-     print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEGGEG");
-    widget.callback(testo.substring(i, f));
+    print(
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEGGEG");
+    if (testo != "") widget.callback(testo);
   }
 
   @override

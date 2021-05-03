@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class DatePicker extends StatefulWidget {
   Function(TextEditingController) callback;
-  String data;
+  TextEditingController data;
   DatePicker(this.data, this.callback);
 
   @override
@@ -10,12 +10,10 @@ class DatePicker extends StatefulWidget {
 }
 
 class _DatePickerState extends State<DatePicker> {
-  final dateController = TextEditingController();
+  TextEditingController dateController = TextEditingController();
 
   _DatePickerState(data) {
-    
-      dateController.text = data;
-   
+    dateController = data;
   }
 
   @override
@@ -35,10 +33,12 @@ class _DatePickerState extends State<DatePicker> {
       onTap: () async {
         var date = await showDatePicker(
             context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime.now(),
+            initialDate: dateController.text == ""
+                ? DateTime.now()
+                : DateTime.parse(dateController.text),
+            firstDate: DateTime(2000),
             lastDate: DateTime(2100));
-        dateController.text = date.toString().substring(0, 10);
+        dateController.text = date.toLocal().toString().split(' ')[0];
         widget.callback(dateController);
       },
     ));
