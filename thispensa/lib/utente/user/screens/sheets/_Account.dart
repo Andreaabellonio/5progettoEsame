@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
 //import 'package:flutter_image_ppicker/home_screen.dart';
 //file puntatori al'origine'
 import '../screens.dart';
@@ -49,7 +48,7 @@ import '../screens.dart';
         padding: EdgeInsets.all(8.0),
         child: Column(
           children: <Widget>[
-            new Container(
+            /*new Container(
                 height: 80.0,
                 width: 80.0,
                 child: new Image.asset('/assets/images/cactus.jpg'),
@@ -59,7 +58,7 @@ import '../screens.dart';
                     border: Border.all(color: const Color(0xFF28324E)),
                 ),
 
-                ),
+                ),*/
 
             //CREAZIONE DELLE DUE TEXTBOX
             textBoxController("Nome", _nameController),

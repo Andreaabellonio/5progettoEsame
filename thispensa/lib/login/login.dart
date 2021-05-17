@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import '../style/colors.dart';
 import '../nav/nav.dart';
 
@@ -169,7 +170,7 @@ class _RegisterPage extends State<RegisterPage> {
         "nome": "prendere da textbox",
         "cognome": "prendere da textbox"
       };
-      http.post(Uri.http('thispensa.herokuapp.com', '/registrazione'),
+      http.post(Uri.https('thispensa.herokuapp.com', '/registrazione'),
           body: json.encode(params),
           headers: {
             "Accept": "application/json",
@@ -184,7 +185,6 @@ class _RegisterPage extends State<RegisterPage> {
           if (!user.emailVerified) {
             await user.sendEmailVerification();
           }
-          _auth.signOut();
           setState(() {
             _success = true;
             _userEmail = "Controlla la tua mail per confermare l'account";
@@ -194,6 +194,7 @@ class _RegisterPage extends State<RegisterPage> {
     } else {
       _success = false;
     }
+    _auth.signOut();
   }
 
   @override
@@ -250,9 +251,7 @@ class _loginPage extends State<loginPage> {
 
       final user = userCredential.user;
       var params = {"uid": user.uid.toString()};
-      http.post(
-          Uri.https(
-              'thispensa.herokuapp.com', '/collegamentoAccountGoogle'),
+      http.post(Uri.https('thispensa.herokuapp.com', '/collegamentoAccountGoogle'),
           body: json.encode(params),
           headers: {
             "Accept": "application/json",
@@ -337,10 +336,14 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                     Buttons.Email,
                     text: 'Sign In',
                     onPressed: () async {
-                    
-                      if (_formKey.currentState.validate()) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => MyNavWidget()),
+                        (route) => false,
+                      );
+                      /*if (_formKey.currentState.validate()) {
                         await _signInWithEmailAndPassword();
-                      }
+                      }*/
                     },
                   ),
                 ),
@@ -362,13 +365,6 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                     text: 'Register',
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  alignment: Alignment.center,
-                  child: SignInButton(Buttons.Google, onPressed: () async {
-                    _signInWithGoogle();
-                  }),
-                ),
               ],
             ),
           ),
@@ -380,56 +376,6 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _signInWithGoogle() async {
-    try {
-      UserCredential userCredential;
-
-      if (kIsWeb) {
-        GoogleAuthProvider googleProvider = GoogleAuthProvider();
-        userCredential = await _auth.signInWithPopup(googleProvider);
-      } else {
-        final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        final GoogleAuthCredential googleAuthCredential =
-            GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-        userCredential = await _auth.signInWithCredential(googleAuthCredential);
-      }
-
-      final user = userCredential.user;
-      var params = {"uid": user.uid.toString()};
-      http.post(
-          Uri.http(
-              'thispensa.herokuapp.com', '/collegamentoAccountGoogle'),
-          body: json.encode(params),
-          headers: {
-            "Accept": "application/json",
-            HttpHeaders.contentTypeHeader: "application/json"
-          }).then((response) async {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => MyNavWidget()),
-          (route) => false,
-        );
-      });
-
-      /*
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Accesso con google avvenuto con successo'),
-      ));*/
-    } catch (e) {
-      print(e);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Accesso con google fallito: $e'),
-        ),
-      );
-    }
   }
 
   // Example code of how to sign in with email and password.
@@ -479,3 +425,5 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
     }
   }
 }
+
+
