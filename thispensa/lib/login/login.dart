@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import '../style/colors.dart';
 import '../nav/nav.dart';
 
@@ -7,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_signin_button/button_builder.dart';
-//import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_signin_button/button_list.dart';
 import 'package:flutter_signin_button/button_view.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -45,7 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
         print('User is currently signed out!');
       } else {
         var params = {"uid": user.uid.toString()};
-        http.post(Uri.http('192.168.137.1:23377', '/login'),
+        http.post(Uri.https('thispensa.herokuapp.com', '/login'),
             body: json.encode(params),
             headers: {
               "Accept": "application/json",
@@ -170,7 +170,7 @@ class _RegisterPage extends State<RegisterPage> {
         "nome": "prendere da textbox",
         "cognome": "prendere da textbox"
       };
-      http.post(Uri.http('192.168.137.1:23377', '/registrazione'),
+      http.post(Uri.https('thispensa.herokuapp.com', '/registrazione'),
           body: json.encode(params),
           headers: {
             "Accept": "application/json",
@@ -251,7 +251,7 @@ class _loginPage extends State<loginPage> {
 
       final user = userCredential.user;
       var params = {"uid": user.uid.toString()};
-      http.post(Uri.http('192.168.137.1:23377', '/collegamentoAccountGoogle'),
+      http.post(Uri.https('thispensa.herokuapp.com', '/collegamentoAccountGoogle'),
           body: json.encode(params),
           headers: {
             "Accept": "application/json",
@@ -389,7 +389,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
       if (user.emailVerified) {
         var params = {"uid": user.uid.toString()};
         print(params);
-        http.post(Uri.http('192.168.137.1:23377', '/login'),
+        http.post(Uri.https('thispensa.herokuapp.com', '/login'),
             body: json.encode(params),
             headers: {
               "Accept": "application/json",
