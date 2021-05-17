@@ -1,0 +1,3 @@
+# assets
+
+cartella in cui verranno salvate immagini, loghi, icone ecc...
