@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../object_list/list.dart';
 import '../../style/colors.dart';
 
 class Specs extends StatelessWidget {
+  final Location location;
+  Specs(this.location);
 
 
   @override
@@ -19,7 +22,7 @@ class Specs extends StatelessWidget {
             //alignment: AlignmentDirectional.bottomEnd,
             children: [
               Text(
-                'pgfpfgp',
+                location.name.toUpperCase(),
                 style: TextStyle(
                     fontFamily: 'RaleWay',
                     fontSize: 25,
