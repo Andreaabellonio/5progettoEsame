@@ -62,7 +62,6 @@ class _MyDispensaState extends State<MyDispensa> {
                   },
                 );
               }
-              ;
             },
           ),
         ],

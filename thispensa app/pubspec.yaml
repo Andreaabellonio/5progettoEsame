@@ -29,11 +29,13 @@ dependencies:
   flutter_signin_button: ^2.0.0
   google_sign_in: ^5.0.3
   http: ^0.13.3
-  firebase_messaging: ^9.1.4
+  firebase_messaging: ^10.0.0
   flutter_mobile_vision: ^0.1.4+1
   flutter_barcode_scanner: ^2.0.0
   translator: ^0.1.5
   flutter_easyloading: ^3.0.0
+  shared_preferences: ^2.0.5
+  prompt_dialog: ^1.0.0
 
   flutter_email_sender: ^5.0.0
   circular_profile_avatar: ^2.0.0

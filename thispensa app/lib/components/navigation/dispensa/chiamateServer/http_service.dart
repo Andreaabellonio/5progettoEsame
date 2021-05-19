@@ -8,11 +8,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class HttpService {
-  final String postsURL = "https://thispensa.herokuapp.com/leggiDispensa";
+  final String postsURL = "https://thispensa.herokuapp.com/leggiDispense";
 
   Future<List<Post>> getPosts() async {
     var params = {
-      "idDispensa": "default",
       "uid": _auth.currentUser.uid.toString(),
       "tokenJWT": await _auth.currentUser.getIdToken()
     };

@@ -66,7 +66,7 @@ app.post("/login", function (req, res) {
                 mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, async function (data) {
                     if (data.length == 1) {
                         req.session.auth = true;
-                        res.send(JSON.stringify({ errore: false }));
+                        res.send(JSON.stringify({ errore: false, listaDellaSpesa: data[0].listeDellaSpesa, dispensa: data[0].dispense }));
                     } else
                         res.send(JSON.stringify({ errore: true }));
                 });
@@ -103,7 +103,7 @@ app.post("/registrazione", function (req, res) {
                 dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
                 dato.dispense = [dispense.insertedId];
                 mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
-                    res.send(JSON.stringify({ errore: false, listaDellaSpesa: dato.listeDellaSpesa, dispensa: dato.dispense }));
+                    res.send(JSON.stringify({ errore: false }));
                 });
             });
         });
@@ -131,8 +131,8 @@ app.post("/collegamentoAccountGoogle", function (req, res) {
                         req.session.auth = true;
                         res.send(JSON.stringify({ errore: false, listaDellaSpesa: utente.listeDellaSpesa, dispensa: utente.dispense }));
                     } else {
-                        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", {}, function (listaDellaSpesa) {
-                            mongoFunctions.insertOne(res, nomeDb, "dispense", {}, function (dispense) {
+                        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { nome: req.body.nomeLista }, function (listaDellaSpesa) {
+                            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa }, function (dispense) {
                                 dato.listeDellaSpesa = listaDellaSpesa.insertedId;
                                 dato.dispense = dispense.insertedId;
                                 mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
@@ -252,6 +252,7 @@ app.post("/ricercaProdotto", function (req, res) {
 app.post("/inserisciProdottoDispensa", function (req, res) {
     let dato = {
         idProdotto: req.body.barcode,
+        nome: req.body.nome,
         dataInserimento: new Date(Date.now()),
         dataScadenza: new Date(req.body.dataScadenza),
         idUtente: mongo.ObjectID(req.body.idUtente),
@@ -272,6 +273,7 @@ app.post("/inserisciProdottoDispensa", function (req, res) {
 app.post("/aggiornaProdottoDispensa", function (req, res) {
     let dato = {
         idProdotto: req.body.barcode,
+        nome: req.body.nome,
         dataScadenza: new Date(req.body.dataScadenza),
         idUtente: req.body.uid,
         qta: req.body.qta
@@ -283,22 +285,15 @@ app.post("/aggiornaProdottoDispensa", function (req, res) {
 
 //?DATI INPUT
 //idDispensa
-app.post("/leggiDispensa", function (req, res) {
-    console.log(req.body);
-    if (req.body.idDispensa != "default") {
-        mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { elementi: 1 }, function (data) {
+app.post("/leggiDispense", function (req, res) {
+    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
+        data[0]
+        mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
+            console.log(data);
             res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
         });
-    }
-    else {
-        mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-            console.log(data);
-            mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
-                console.log(data);
-                res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
-            });
-        });
-    }
+    });
+
 });
 
 //?DATI INPUT

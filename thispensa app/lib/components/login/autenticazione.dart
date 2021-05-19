@@ -9,6 +9,7 @@ import 'package:flutter_signin_button/button_list.dart';
 import 'package:flutter_signin_button/button_view.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:prompt_dialog/prompt_dialog.dart';
 
 import '../navigation/navigation_bar.dart';
 import '../../styles/colors.dart';
@@ -123,12 +124,16 @@ class _registerPage extends State<RegisterPage> {
       TextEditingController();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cognomeController = TextEditingController();
+  final TextEditingController _nomeDispensaController = TextEditingController();
+  final TextEditingController _nomeListaController = TextEditingController();
 
   bool _success;
   String _userEmail = '';
   String _err = "";
 
   Widget build(BuildContext context) {
+    _nomeDispensaController.text = "Prima dispensa";
+    _nomeListaController.text = "Prima lista della spesa";
     var paint = Paint();
     paint.color = Colors.black;
     paint.style = PaintingStyle.fill;
@@ -223,6 +228,30 @@ class _registerPage extends State<RegisterPage> {
                                   return null;
                                 },
                               ),
+                              TextFormField(
+                                keyboardType: TextInputType.text,
+                                controller: _nomeDispensaController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Nome dispensa'),
+                                validator: (String value) {
+                                  if (value.isEmpty) {
+                                    return 'Inserisci un nome per continuare';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              TextFormField(
+                                keyboardType: TextInputType.text,
+                                controller: _nomeListaController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Nome lista della spesa'),
+                                validator: (String value) {
+                                  if (value.isEmpty) {
+                                    return 'Inserisci un nome per continuare';
+                                  }
+                                  return null;
+                                },
+                              ),
                               Container(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
@@ -303,7 +332,9 @@ class _registerPage extends State<RegisterPage> {
       var params = {
         "uid": user.uid.toString(),
         "nome": _nomeController.text,
-        "cognome": _cognomeController.text
+        "cognome": _cognomeController.text,
+        "nomeDispensa": _nomeDispensaController.text,
+        "nomeLista": _nomeListaController.text
       };
       http.post(Uri.https('thispensa.herokuapp.com', '/registrazione'),
           body: json.encode(params),
@@ -328,6 +359,7 @@ class _registerPage extends State<RegisterPage> {
             _confermaPasswordController.text = "";
             _nomeController.text = "";
             _cognomeController.text = "";
+            _nomeDispensaController.text = "";
           });
         }
       });
@@ -397,7 +429,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                       ElevatedButton.icon(
                         icon: Icon(
                           Icons.send,
-                          color: Colors.grey[400],
+                          color: Colors.grey[300],
                         ),
                         label: Text(
                           "Accedi",
@@ -409,7 +441,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                         ),
                         style: ButtonStyle(
                             backgroundColor: MaterialStateProperty.all<Color>(
-                                Colori.primario)),
+                                Colori.primarioScuro)),
                         onPressed: () async {
                           if (_formKey.currentState.validate()) {
                             await _signInWithEmailAndPassword();
@@ -419,7 +451,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                       ElevatedButton.icon(
                         icon: Icon(
                           Icons.border_color,
-                          color: Colors.grey[400],
+                          color: Colors.grey[300],
                         ),
                         label: Text(
                           "Registrati",
@@ -444,11 +476,11 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                       SignInButton(Buttons.Google, onPressed: () async {
                         _signInWithGoogle();
                       }, text: "Accedi con Google"),
-                      SizedBox(height: 20),
+                      SizedBox(height: 40),
                       ElevatedButton.icon(
                         icon: Icon(
                           Icons.help,
-                          color: Colors.grey[400],
+                          color: Colors.grey[300],
                         ),
                         label: Text(
                           "Password dimenticata",
@@ -462,13 +494,17 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                             backgroundColor: MaterialStateProperty.all<Color>(
                                 Colori.primarioScuro)),
                         onPressed: () async {
-                          await _auth.sendPasswordResetEmail(
-                              email: _auth.currentUser.email);
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(const SnackBar(
-                            content: Text(
-                                'Email per resettare la password inviata. Controlla la tua casella.'),
-                          ));
+                          String email = await prompt(context);
+                          try {
+                            await _auth.sendPasswordResetEmail(email: email);
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                              content: Text(
+                                  'Email per resettare la password inviata. Controlla la tua casella.'),
+                            ));
+                          } catch (ex) {
+                            print(ex);
+                          }
                         },
                       ),
                     ],
