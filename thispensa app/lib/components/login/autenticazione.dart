@@ -132,8 +132,8 @@ class _registerPage extends State<RegisterPage> {
   String _err = "";
 
   Widget build(BuildContext context) {
-    _nomeDispensaController.text = "Prima dispensa";
-    _nomeListaController.text = "Prima lista della spesa";
+    //_nomeDispensaController.text = "Prima dispensa";
+    //_nomeListaController.text = "Prima lista della spesa";
     var paint = Paint();
     paint.color = Colors.black;
     paint.style = PaintingStyle.fill;
@@ -240,6 +240,7 @@ class _registerPage extends State<RegisterPage> {
                                   return null;
                                 },
                               ),
+
                               TextFormField(
                                 keyboardType: TextInputType.text,
                                 controller: _nomeListaController,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../productWidgets/datePicker.dart';
+import 'package:thispensa/components/productWidgets/datePicker.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import '../../productWidgets/flutterMobileVision.dart';
+import 'package:thispensa/components/productWidgets/flutterMobileVision.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,23 +12,14 @@ class PaginaAggiuntaProdotto extends StatefulWidget {
   String urlImmagine;
   String calorie;
   String nutriScore;
-  String ingredienti;
-  String qta;
   List<String> tracce;
 
   PaginaAggiuntaProdotto(this.barcode, this.nomeProdotto, this.urlImmagine,
-      this.calorie, this.nutriScore, this.tracce, this.ingredienti, this.qta);
+      this.calorie, this.nutriScore, this.tracce);
 
   @override
   _PaginaAggiuntaProdottoState createState() => _PaginaAggiuntaProdottoState(
-      barcode,
-      nomeProdotto,
-      urlImmagine,
-      calorie,
-      nutriScore,
-      tracce,
-      ingredienti,
-      qta);
+      barcode, nomeProdotto, urlImmagine, calorie, nutriScore, tracce);
 }
 
 class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
@@ -37,16 +28,11 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
   String urlImmagine;
   String calorie;
   String nutriScore;
-  String ingredienti;
-  String qta;
   List<String> tracce;
+  String aaaaa = "aaa";
 
   var controllerQuantita = TextEditingController();
   var controllerData = TextEditingController();
-  var controllerNomeProdotto = TextEditingController();
-  var controllerCalorie = TextEditingController();
-  var controllerNutriScore = TextEditingController();
-  var controllerIngredienti = TextEditingController();
 
   callback(nuovoController) {
     setState(() {
@@ -54,85 +40,45 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
     });
   }
 
+
   callback2(stringa) {
+   
+
     setState(() {
-      if (stringa != "")
-        controllerData.text = DateTime.parse(stringa).toString().split(' ')[0];
-      else {
-        controllerData.text = "";
-        _showMyDialog(context, "Data non riconosciuta.\nRiprovare");
-      }
+      controllerData.text = stringa;
     });
   }
 
-  _PaginaAggiuntaProdottoState(
-      this.barcode,
-      this.nomeProdotto,
-      this.urlImmagine,
-      this.calorie,
-      this.nutriScore,
-      this.tracce,
-      this.ingredienti,
-      this.qta);
+  _PaginaAggiuntaProdottoState(this.barcode, this.nomeProdotto,
+      this.urlImmagine, this.calorie, this.nutriScore, this.tracce);
 
   @override
   Widget build(BuildContext context) {
-    controllerNomeProdotto.text = this.nomeProdotto;
-    controllerCalorie.text = this.calorie;
-    controllerNutriScore.text = this.nutriScore;
-    controllerIngredienti.text = this.ingredienti;
-
     return Scaffold(
         appBar: AppBar(
           title: Text("Aggiungi Prodotto"),
         ),
         body: ListView(padding: const EdgeInsets.all(8), children: <Widget>[
-          TextFormField(
-            keyboardType: TextInputType.text,
-            controller: controllerNomeProdotto,
-            decoration: const InputDecoration(labelText: 'Nome Prodotto'),
-            validator: (String value) {
-              if (value.isEmpty) {
-                return 'Dai un nome personalizzato al prodotto';
-              }
-              return null;
-            },
+          Container(
+            child: Text(
+              nomeProdotto,
+              style: TextStyle(fontSize: 20),
+            ),
+            padding: EdgeInsets.all(16.0),
           ),
-          TextFormField(
-            enabled: false,
-            keyboardType: TextInputType.text,
-            controller: controllerNutriScore,
-            decoration: const InputDecoration(),
-            validator: (String value) {
-              if (value.isEmpty) {
-                return '';
-              }
-              return null;
-            },
+          Container(
+            child: Text(
+              "NutriScore: " + nutriScore,
+              style: TextStyle(fontSize: 20),
+            ),
+            padding: EdgeInsets.all(16.0),
           ),
-          TextFormField(
-            enabled: false,
-            keyboardType: TextInputType.text,
-            controller: controllerCalorie,
-            decoration: const InputDecoration(),
-            validator: (String value) {
-              if (value.isEmpty) {
-                return '';
-              }
-              return null;
-            },
-          ),
-          TextFormField(
-            enabled: false,
-            keyboardType: TextInputType.text,
-            controller: controllerIngredienti,
-            decoration: const InputDecoration(),
-            validator: (String value) {
-              if (value.isEmpty) {
-                return 'Inserisci un nome per continuare';
-              }
-              return null;
-            },
+          Container(
+            child: Text(
+              "calorie: " + calorie,
+              style: TextStyle(fontSize: 20),
+            ),
+            padding: EdgeInsets.all(16.0),
           ),
           Text("puo contenere tracce di:"),
           ListView.builder(
@@ -161,27 +107,25 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                   ]),
               padding: EdgeInsets.all(16.0)),
           Image.network('$urlImmagine', fit: BoxFit.contain),
+          Text(aaaaa),
           TextButton(
               child: Text("aggiungi"),
               onPressed: () {
                 //mando la chiamata
                 String data = controllerData.text;
-                String nome = controllerNomeProdotto.text;
                 int quantita = int.parse(controllerQuantita.text);
                 print(data + " " + quantita.toString());
+                var url = "https://thispensa.herokuapp.com/inserisciProdottoDispensa";
                 var params = {
                   "idUtente": "60491b3739c4c1f0512d0c38",
                   "idDispensa": "60491bb339c4c1f0512d0c3a",
-                  "nome": nome,
                   "qta": quantita,
                   "dataScadenza": data,
                   "barcode": barcode
                 };
                 print(params);
                 //? Richiesta post al server node con parametri
-                http.post(
-                    Uri.https('thispensa.herokuapp.com',
-                        "/inserisciProdottoDispensa"),
+                http.post(Uri.parse(url),
                     body: json.encode(params),
                     headers: {
                       "Accept": "application/json",
@@ -194,6 +138,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                   else
                     print("fattoooo");
 
+
                   Navigator.of(context).pop();
                 });
               }),
@@ -204,30 +149,5 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                 Navigator.of(context).pop();
               }),
         ]));
-  }
-
-  Future<void> _showMyDialog(BuildContext context, String testo) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Errore'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[Text(testo)],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 }

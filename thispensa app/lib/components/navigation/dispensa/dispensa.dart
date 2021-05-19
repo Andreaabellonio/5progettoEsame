@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:prompt_dialog/prompt_dialog.dart';
 import '../../../styles/colors.dart';
-import 'object_list/post_model.dart';
+import '../../../models/dispensa_model.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'chiamateServer/http_service.dart';
 
@@ -22,59 +23,63 @@ class _MyDispensaState extends State<MyDispensa> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        floatingActionButton: FloatingActionButton(
+            backgroundColor: Colori.primario,
+            child: Icon(Icons.add),
+            onPressed: () async => {}),
         body: Container(
             child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('my Items',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 40.0,
-                  fontWeight: FontWeight.bold)),
-          SizedBox(height: 10.0),
-          Text('just food',
-              style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w600)),
-          SizedBox(height: 10.0),
-          FutureBuilder(
-            future: httpService.getPosts(),
-            builder:
-                (BuildContext context, AsyncSnapshot<List<Post>> snapshot) {
-              if (!snapshot.hasData) {
-                return Center(child: CircularProgressIndicator());
-              } else {
-                List<Post> posts = snapshot.data;
-                List<Widget> oggetti = posts
-                    .map(
-                      (Post post) => _itemBuilder(post),
-                    )
-                    .toList();
-                return new ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  shrinkWrap: true,
-                  itemCount: oggetti.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return oggetti[index];
-                  },
-                );
-              }
-            },
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('my Items',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 40.0,
+                      fontWeight: FontWeight.bold)),
+              SizedBox(height: 10.0),
+              Text('just food',
+                  style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.w600)),
+              SizedBox(height: 10.0),
+              FutureBuilder(
+                future: httpService.getDispense(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<Dispensa>> snapshot) {
+                  if (!snapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  } else {
+                    List<Dispensa> posts = snapshot.data;
+                    List<Widget> oggetti = posts
+                        .map(
+                          (Dispensa dispensa) => _itemBuilder(dispensa),
+                        )
+                        .toList();
+                    return new ListView.builder(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      itemCount: oggetti.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return oggetti[index];
+                      },
+                    );
+                  }
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-    )));
+        )));
   }
 
-  Widget _itemBuilder(Post post) {
+  Widget _itemBuilder(Dispensa dispensa) {
     return Container(
       child: Stack(
         //alignment: AlignmentDirectional.bottomEnd,
         children: [
-          TileOverlay(post),
+          TileOverlay(dispensa),
         ],
       ),
     );
@@ -82,8 +87,8 @@ class _MyDispensaState extends State<MyDispensa> {
 }
 
 class TileOverlay extends StatelessWidget {
-  final Post post;
-  TileOverlay(this.post);
+  final Dispensa dispensa;
+  TileOverlay(this.dispensa);
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -96,30 +101,29 @@ class TileOverlay extends StatelessWidget {
               //padding: EdgeInsets.symmetric(vertical: 5.0),
               /*decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.5)), //opacità tra 0 e 1*/
-              child: PostTile(post: post)),
+              child: DispensaTile(dispensa: dispensa)),
         )
       ],
     );
   }
 }
 
-class PostTile extends StatefulWidget {
-  PostTile({this.post});
+class DispensaTile extends StatefulWidget {
+  DispensaTile({this.dispensa});
 
-  final Post post;
+  final Dispensa dispensa;
   @override
-  _PostTileState createState() => new _PostTileState(post: post);
+  _DispensaTileState createState() =>
+      new _DispensaTileState(dispensa: dispensa);
 }
 
 //----------------------------------------------------------------------------------------//
 
-class _PostTileState extends State<PostTile> {
-  _PostTileState({
-    this.post,
+class _DispensaTileState extends State<DispensaTile> {
+  _DispensaTileState({
+    this.dispensa,
   }); //!default value, parametri tra {} vuol dire che sono opzionali
-  final Post post;
-  final String postsURL =
-      "https://thispensa.herokuapp.com/aggiornaProdottoDispensa";
+  final Dispensa dispensa;
 
   @override
   Widget build(BuildContext context) {
@@ -129,29 +133,13 @@ class _PostTileState extends State<PostTile> {
       alignment: Alignment.topLeft,
       margin: const EdgeInsets.only(left: 12.0),
       child: Text(
-        post.name.toUpperCase(),
+        dispensa.nome,
         //style: Theme.of(context).textTheme.bodyText1,
         style: TextStyle(
           fontSize: 14,
         ),
         overflow: TextOverflow.fade,
         //textAlign: TextAlign.justify,
-      ),
-    );
-
-    final numberPicker = NumberPicker(
-      textStyle: TextStyle(fontSize: 12),
-      value: post.qta,
-      minValue: 0,
-      maxValue: 100,
-      step: 1,
-      itemHeight: 50,
-      itemWidth: 50,
-      axis: Axis.horizontal,
-      onChanged: (value) => setState(() => post.qta = value),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black26),
       ),
     );
 
@@ -162,13 +150,12 @@ class _PostTileState extends State<PostTile> {
       iconSize: 35,
       onPressed: () async {
         var params = {
-          "barcode": post.barcode,
-          "number": numberPicker.value,
+          "idDispensa": dispensa.id,
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
         };
         print(params);
-
+        String postsURL = "https://thispensa.herokuapp.com/eliminaDispensa";
         http.Response res = await http.post(Uri.parse(postsURL),
             body: json.encode(params),
             headers: {
@@ -180,8 +167,7 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           dynamic body = jsonDecode(res.body);
 
-          List<dynamic> lista = body["prodotti"];
-          print(lista);
+          print(body);
         } else {
           throw "Unable to retrieve posts.";
         }
@@ -214,10 +200,7 @@ class _PostTileState extends State<PostTile> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         //mainAxisAlignment: MainAxisAlignment.value(),
-                        children: [
-                          numberPicker,
-                          trash,
-                        ],
+                        children: [trash],
                       ),
                     ),
                   ],

@@ -1,17 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart';
-import '../object_list/post_model.dart';
+import '../../../../models/post_model.dart';
+import '../../../../models/dispensa_model.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class HttpService {
-  final String postsURL = "https://thispensa.herokuapp.com/leggiDispense";
 
-  Future<List<Post>> getPosts() async {
+
+  Future<List<Post>> getPosts(String idDispensa) async {
+    String postsURL = "https://thispensa.herokuapp.com/leggiDispensa";
     var params = {
+      "idDispensa":idDispensa,
       "uid": _auth.currentUser.uid.toString(),
       "tokenJWT": await _auth.currentUser.getIdToken()
     };
@@ -39,7 +42,6 @@ class HttpService {
             qta: lista[i]["qta"] as int,
             dataScadenza: DateTime.parse(lista[i]["dataScadenza"])));
       }
-
       return posts;
     } else {
       throw "Unable to retrieve posts.";
@@ -56,6 +58,45 @@ class HttpService {
         name: nome,
         qta: json['qta'] as int);
   }
+
+
+
+  Future<List<Dispensa>> getDispense() async {
+    String postsURL = "https://thispensa.herokuapp.com/leggiIdDispense";
+    var params = {
+      "uid": _auth.currentUser.uid.toString(),
+      "tokenJWT": await _auth.currentUser.getIdToken()
+    };
+    //? Richiesta post al server node con parametri
+    Response res = await post(Uri.parse(postsURL),
+        body: json.encode(params),
+        headers: {
+          "Accept": "application/json",
+          HttpHeaders.contentTypeHeader: "application/json"
+        });
+
+    //Response res = await get(postsURL);
+    if (res.statusCode == 200) {
+      dynamic body = jsonDecode(res.body);
+      //print(res.body);
+
+      List<dynamic> lista = body["dati"];
+      //print(lista);
+
+      List<Dispensa> dispense = new List<Dispensa>();
+
+      for (var i = 0; i < lista.length; i++) {
+        
+        dispense.add(Dispensa(
+            id: lista[i]["_id"] as String,
+            nome: lista[i]["nome"] as String,));
+      }
+      return dispense;
+    } else {
+      throw "Unable to retrieve Dispense.";
+    }
+  }
+
 }
 
 Future<String> getProduct1(barcode) async {
@@ -69,3 +110,7 @@ Future<String> getProduct1(barcode) async {
   }
   return "error";
 }
+
+
+
+

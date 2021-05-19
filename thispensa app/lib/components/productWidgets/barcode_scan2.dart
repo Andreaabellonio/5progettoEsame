@@ -82,7 +82,7 @@ class _BarcodeState extends State<Barcode> {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => PaginaAggiuntaProdotto(barcode, nome, urlImg,
-                calorie, nutriScore, tracceTradotte, ingredienti, qta),
+                calorie, nutriScore, tracceTradotte),
           ),
         );
       } else {
