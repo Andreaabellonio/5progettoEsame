@@ -54,6 +54,16 @@ app.use("/", function (req, res, next) {
 
 //#region gestioneLogin&Registrazione
 //!SONO PRIMA DEL CONTROLLO SULLA SESSION PERCHE' NON E' ANCORA AUTENTICATO
+
+app.post("/controllaEmail", function (req, res) {
+    mongoFunctions.find(res, nomeDb, "utenti", { email: req.body.email }, {}, function (data) {
+        if (data.length > 0)
+            res.send(JSON.stringify({ errore: true }));
+        else
+            res.send(JSON.stringify({ errore: false }));
+    });
+});
+
 //? DATI INPUT
 //email
 //username
@@ -72,7 +82,6 @@ app.post("/login", function (req, res) {
                 });
             })
                 .catch((error) => {
-                    console.log(error);
                     if (error.errorInfo.code == "auth/user-not-found")
                         res.send(JSON.stringify({ errore: true, messaggio: "Utente non trovato" }));
                 });
@@ -98,8 +107,8 @@ app.post("/registrazione", function (req, res) {
             cognome: req.body.cognome,
             email: userRecord.email,
         };
-        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", {}, function (listaDellaSpesa) {
-            mongoFunctions.insertOne(res, nomeDb, "dispense", {}, function (dispense) {
+        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { nome: req.body.nomeLista, elementi: [], creatore: req.body.uid }, function (listaDellaSpesa) {
+            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
                 dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
                 dato.dispense = [dispense.insertedId];
                 mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
@@ -131,10 +140,10 @@ app.post("/collegamentoAccountGoogle", function (req, res) {
                         req.session.auth = true;
                         res.send(JSON.stringify({ errore: false, listaDellaSpesa: utente.listeDellaSpesa, dispensa: utente.dispense }));
                     } else {
-                        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { nome: req.body.nomeLista }, function (listaDellaSpesa) {
-                            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa }, function (dispense) {
-                                dato.listeDellaSpesa = listaDellaSpesa.insertedId;
-                                dato.dispense = dispense.insertedId;
+                        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { nome: req.body.nomeLista, elementi: [], creatore: req.body.uid }, function (listaDellaSpesa) {
+                            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
+                                dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
+                                dato.dispense = [dispense.insertedId];
                                 mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
                                     req.session.auth = true;
                                     res.send(JSON.stringify({ errore: false, listaDellaSpesa: dato.listeDellaSpesa, dispensa: dato.dispense }));
@@ -168,7 +177,6 @@ app.use("/", function (req, res, next) {
                         next();
                 })
                     .catch((error) => {
-                        console.log(error);
                         if (error.errorInfo.code == "auth/user-not-found")
                             res.send(JSON.stringify({ errore: true, messaggio: "Utente non trovato" }));
                     });
@@ -213,6 +221,14 @@ app.post("/ricercaProdottoBarcode", function (req, res, next) {
 });
 */
 
+app.post("/aggiungiDispensa", function (req, res) {
+    mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
+        mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });
+});
+
 app.post("/leggiUtente", function (req, res) {
     mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { nome: 1, cognome: 1, email: 1 }, function (data) {
         res.send(JSON.stringify({ errore: false, data: data[0] }));
@@ -221,7 +237,9 @@ app.post("/leggiUtente", function (req, res) {
 
 app.post("/leggiIdDispense", function (req, res) {
     mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-        res.send(JSON.stringify({ errore: false, idDispense: data[0]["dispense"] }));
+        mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1 }, function (data) {
+            res.send({ errore: false, dati: data });
+        });
     });
 });
 
@@ -234,7 +252,6 @@ app.post("/aggiornaUtente", function (req, res) {
 //? DATI INPUT
 //barcode
 app.post("/ricercaProdotto", function (req, res) {
-    console.log("Barcode da ricercare: " + req.body.barcode);
     mongoFunctions.find(res, nomeDb, "prodotti", { barcode: req.body.barcode }, {}, function (data) {
         if (data.length > 0) {
             res.send(JSON.stringify({ trovato: true, prodotto: data }));
@@ -285,15 +302,22 @@ app.post("/aggiornaProdottoDispensa", function (req, res) {
 
 //?DATI INPUT
 //idDispensa
-app.post("/leggiDispense", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-        data[0]
-        mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
-            console.log(data);
+app.post("/leggiDispensa", function (req, res) {
+    console.log(req.body);
+    if (req.body.idDispensa != "default") {
+        mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { elementi: 1 }, function (data) {
             res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
         });
-    });
-
+    }
+    else {
+        mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
+            console.log(data);
+            mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
+                console.log(data);
+                res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
+            });
+        });
+    }
 });
 
 //?DATI INPUT
@@ -308,6 +332,12 @@ app.post("/aggiornaProdotto", function (req, res) {
 //barcode
 app.post("/eliminaProdotto", function (req, res) {
     mongoFunctions.deleteMany(res, nomeDb, "prodotti", { barcode: req.body.barcode }, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+app.post("/eliminaDispensa", function (req, res) {
+    mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });

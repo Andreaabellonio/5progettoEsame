@@ -41,28 +41,30 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
-    if (_auth.currentUser != null) if (_auth.currentUser.emailVerified) {
-      var params = {
-        "uid": _auth.currentUser.uid.toString(),
-        "tokenJWT": _auth.currentUser.getIdToken().toString()
-      };
-      http.post(Uri.https('thispensa.herokuapp.com', '/login'),
-          body: json.encode(params),
-          headers: {
-            "Accept": "application/json",
-            "withCredential": "true",
-            HttpHeaders.contentTypeHeader: "application/json"
-          }).then((response) async {
-        Map data = jsonDecode(response.body);
-        if (!data["errore"]) {
-          inviaTokenFCM();
-          Future.microtask(() => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (BuildContext context) => MyNavWidget())));
-        }
-      });
-    }
+    Future.delayed(Duration.zero, () async {
+      if (_auth.currentUser != null) if (_auth.currentUser.emailVerified) {
+        var params = {
+          "uid": _auth.currentUser.uid.toString(),
+          "tokenJWT": await _auth.currentUser.getIdToken()
+        };
+        http.post(Uri.https('thispensa.herokuapp.com', '/login'),
+            body: json.encode(params),
+            headers: {
+              "Accept": "application/json",
+              "withCredential": "true",
+              HttpHeaders.contentTypeHeader: "application/json"
+            }).then((response) async {
+          Map data = jsonDecode(response.body);
+          if (!data["errore"]) {
+            inviaTokenFCM();
+            Future.microtask(() => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (BuildContext context) => MyNavWidget())));
+          }
+        });
+      }
+    });
     super.initState();
   }
 
@@ -101,7 +103,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
 Future<void> inviaTokenFCM() async {
   String token = await FirebaseMessaging.instance.getToken();
-  var params = {"uid": _auth.currentUser.uid.toString(), "token": token};
+  var params = {
+    "uid": _auth.currentUser.uid.toString(),
+    "token": token,
+    "tokenJWT": await _auth.currentUser.getIdToken()
+  };
   http.post(Uri.https('thispensa.herokuapp.com', '/aggiornaTokenFCM'),
       body: json.encode(params),
       headers: {
@@ -125,15 +131,13 @@ class _registerPage extends State<RegisterPage> {
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cognomeController = TextEditingController();
   final TextEditingController _nomeDispensaController = TextEditingController();
-  final TextEditingController _nomeListaController = TextEditingController();
 
   bool _success;
   String _userEmail = '';
   String _err = "";
 
   Widget build(BuildContext context) {
-    //_nomeDispensaController.text = "Prima dispensa";
-    //_nomeListaController.text = "Prima lista della spesa";
+    _nomeDispensaController.text = "Prima dispensa";
     var paint = Paint();
     paint.color = Colors.black;
     paint.style = PaintingStyle.fill;
@@ -157,7 +161,7 @@ class _registerPage extends State<RegisterPage> {
                         fit: BoxFit.contain,
                       ),
                     ),
-                    SizedBox(height: 60.0),
+                    SizedBox(height: 30.0),
                     Form(
                       key: _formKey,
                       child: Card(
@@ -174,6 +178,30 @@ class _registerPage extends State<RegisterPage> {
                                 validator: (String value) {
                                   if (value.isEmpty) {
                                     return 'Inserisci una mail per continuare';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              TextFormField(
+                                keyboardType: TextInputType.text,
+                                controller: _nomeController,
+                                decoration:
+                                    const InputDecoration(labelText: 'Nome'),
+                                validator: (String value) {
+                                  if (value.isEmpty) {
+                                    return 'Inserisci un nome per continuare';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              TextFormField(
+                                keyboardType: TextInputType.text,
+                                controller: _cognomeController,
+                                decoration:
+                                    const InputDecoration(labelText: 'Cognome'),
+                                validator: (String value) {
+                                  if (value.isEmpty) {
+                                    return 'Inserisci un cognome per continuare';
                                   }
                                   return null;
                                 },
@@ -204,48 +232,12 @@ class _registerPage extends State<RegisterPage> {
                                 },
                                 obscureText: true,
                               ),
-                              TextFormField(
-                                keyboardType: TextInputType.text,
-                                controller: _nomeController,
-                                decoration:
-                                    const InputDecoration(labelText: 'Nome'),
-                                validator: (String value) {
-                                  if (value.isEmpty) {
-                                    return 'Inserisci un nome per continuare';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              TextFormField(
-                                keyboardType: TextInputType.text,
-                                controller: _cognomeController,
-                                decoration:
-                                    const InputDecoration(labelText: 'Cognome'),
-                                validator: (String value) {
-                                  if (value.isEmpty) {
-                                    return 'Inserisci un cognome per continuare';
-                                  }
-                                  return null;
-                                },
-                              ),
+                              SizedBox(height: 20),
                               TextFormField(
                                 keyboardType: TextInputType.text,
                                 controller: _nomeDispensaController,
                                 decoration: const InputDecoration(
                                     labelText: 'Nome dispensa'),
-                                validator: (String value) {
-                                  if (value.isEmpty) {
-                                    return 'Inserisci un nome per continuare';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              TextFormField(
-                                keyboardType: TextInputType.text,
-                                controller: _nomeListaController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Nome lista della spesa'),
                                 validator: (String value) {
                                   if (value.isEmpty) {
                                     return 'Inserisci un nome per continuare';
@@ -283,19 +275,26 @@ class _registerPage extends State<RegisterPage> {
                                             _confermaPasswordController.text ==
                                                 _passwordController.text) {
                                           try {
+                                            EasyLoading.instance.indicatorType =
+                                                EasyLoadingIndicatorType
+                                                    .foldingCube;
+                                            EasyLoading.instance
+                                                .userInteractions = false;
+                                            EasyLoading.show();
                                             await _register();
                                           } catch (err) {
-                                            setState(() {
-                                              _err = err.message;
-                                              _success = false;
-                                            });
+                                            EasyLoading.dismiss();
                                           }
                                         } else {
-                                          setState(() {
-                                            _err =
-                                                "Le password devono corrispondere!";
-                                            _success = false;
-                                          });
+                                          EasyLoading.dismiss();
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              backgroundColor: Colors.red,
+                                              content: Text(
+                                                  'Le password devono corrispondere!'),
+                                            ),
+                                          );
                                         }
                                       },
                                     ),
@@ -324,48 +323,78 @@ class _registerPage extends State<RegisterPage> {
   }
 
   Future<void> _register() async {
-    final User user = (await _auth.createUserWithEmailAndPassword(
-      email: _emailController.text,
-      password: _passwordController.text,
-    ))
-        .user;
-    if (user != null) {
-      var params = {
-        "uid": user.uid.toString(),
-        "nome": _nomeController.text,
-        "cognome": _cognomeController.text,
-        "nomeDispensa": _nomeDispensaController.text,
-        "nomeLista": _nomeListaController.text
-      };
-      http.post(Uri.https('thispensa.herokuapp.com', '/registrazione'),
-          body: json.encode(params),
-          headers: {
-            "Accept": "application/json",
-            "withCredential": "true",
-            HttpHeaders.contentTypeHeader: "application/json"
-          }).then((response) async {
-        Map data = jsonDecode(response.body);
-        if (data["errore"]) {
-          _success = false;
-          _auth.currentUser.delete();
-        } //se genera un'errore il server elimino l'account da firebase
-        else {
-          if (!user.emailVerified)
-            await user.sendEmailVerification().then((value) => _auth.signOut());
-          setState(() {
-            _success = true;
-            _userEmail = "Controlla la tua mail per confermare l'account";
-            _emailController.text = "";
-            _passwordController.text = "";
-            _confermaPasswordController.text = "";
-            _nomeController.text = "";
-            _cognomeController.text = "";
-            _nomeDispensaController.text = "";
+    var params = {
+      "email": _emailController.text,
+    };
+    http.post(Uri.https('thispensa.herokuapp.com', '/controllaEmail'),
+        body: json.encode(params),
+        headers: {
+          "Accept": "application/json",
+          "withCredential": "true",
+          HttpHeaders.contentTypeHeader: "application/json"
+        }).then((response) async {
+      Map data = jsonDecode(response.body);
+      if (data["errore"]) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.yellow,
+            content: Text('Email già presente, inserire una mail differente!'),
+          ),
+        );
+      } else {
+        final User user = (await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        ))
+            .user;
+        if (user != null) {
+          var params = {
+            "uid": user.uid.toString(),
+            "nome": _nomeController.text,
+            "cognome": _cognomeController.text,
+            "nomeDispensa": _nomeDispensaController.text,
+          };
+          http.post(Uri.https('thispensa.herokuapp.com', '/registrazione'),
+              body: json.encode(params),
+              headers: {
+                "Accept": "application/json",
+                "withCredential": "true",
+                HttpHeaders.contentTypeHeader: "application/json"
+              }).then((response) async {
+            Map data = jsonDecode(response.body);
+            if (data["errore"]) {
+              _success = false;
+              _auth.currentUser.delete();
+              EasyLoading.dismiss();
+            } //se genera un'errore il server elimino l'account da firebase
+            else {
+              if (!user.emailVerified)
+                await user
+                    .sendEmailVerification()
+                    .then((value) => _auth.signOut());
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content:
+                      Text('Controlla la tua mail per confermare l\'account'),
+                ),
+              );
+              setState(() {
+                _emailController.text = "";
+                _passwordController.text = "";
+                _confermaPasswordController.text = "";
+                _nomeController.text = "";
+                _cognomeController.text = "";
+                _nomeDispensaController.text = "";
+              });
+              EasyLoading.dismiss();
+            }
           });
+        } else {
+          _success = false;
+          EasyLoading.dismiss();
         }
-      });
-    } else
-      _success = false;
+      }
+    });
   }
 
   @override
@@ -533,6 +562,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
           idToken: googleAuth.idToken,
         );
         userCredential = await _auth.signInWithCredential(googleAuthCredential);
+        print(userCredential);
       }
 
       final user = userCredential.user;

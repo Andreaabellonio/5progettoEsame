@@ -54,7 +54,7 @@ class AccountState extends State<Account> {
 //funzione per la creazione delle textbox
   Widget textBoxController(String text, TextEditingController controller) {
     return Padding(
-      padding: EdgeInsets.all(8.0), //padding da tutti i lati di 8
+      padding: EdgeInsets.all(1.0), //padding da tutti i lati di 8
       child: TextField(
         controller: controller, //testo all'interno della textbox
         decoration: InputDecoration(

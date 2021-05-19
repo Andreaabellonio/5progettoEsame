@@ -7,6 +7,7 @@ import 'Settings/menu_settings.dart';
 class MyNavWidget extends StatefulWidget {
   MyNavWidget({this.auth});
   final FirebaseAuth auth;
+
   //MyNavWidget({Key key}) : super(key: key);
 
   @override
@@ -16,6 +17,8 @@ class MyNavWidget extends StatefulWidget {
 class _MyNavWidgetState extends State<MyNavWidget> {
   _MyNavWidgetState({this.auth});
   final FirebaseAuth auth;
+  MyDispensa obj;
+  
 
   int _selectedIndex = 0;
 
@@ -25,6 +28,8 @@ class _MyNavWidgetState extends State<MyNavWidget> {
       ),*/
 
     Container(
+      //child: MyDispensa(),
+      //child: this.idDispensa != null ? obj.idDispensa : null,
       child: MyDispensa(),
     ),
     Container(
@@ -49,10 +54,10 @@ class _MyNavWidgetState extends State<MyNavWidget> {
     return GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Scaffold(
-          appBar: AppBar(
+          /*appBar: AppBar(
             automaticallyImplyLeading: false,
             title: const Text('Thispensa'),
-          ),
+          ),*/
           body: Center(
             child: _widgetOptions.elementAt(_selectedIndex),
           ),

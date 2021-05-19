@@ -3,26 +3,81 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:prompt_dialog/prompt_dialog.dart';
+import 'package:thispensa/components/navigation/navigation_bar.dart';
+import 'package:thispensa/models/dispensa_model.dart';
+import 'package:thispensa/models/post_model.dart';
 import '../../../styles/colors.dart';
-import '../../../models/dispensa_model.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'chiamateServer/http_service.dart';
+import 'package:thispensa/models/dispensa_model.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class MyDispensa extends StatefulWidget {
-  MyDispensa({Key key}) : super(key: key);
-
   @override
   _MyDispensaState createState() => _MyDispensaState();
 }
 
 class _MyDispensaState extends State<MyDispensa> {
   final HttpService httpService = HttpService();
+  List<Widget> oggetti;
+  String idDispensa;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+          title: const Text(''),
+        ),
+        drawer: Drawer(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colori.primario,
+                ),
+                child: Text(
+                  'Dispense',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 40.0,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              FutureBuilder(
+                future: httpService.getDispense(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<Dispensa>> snapshot) {
+                  if (!snapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  } else {
+                    List<Dispensa> posts = snapshot.data;
+                    idDispensa = posts[0].id;
+                    List<Widget> oggetti = posts
+                        .map((Dispensa dispensa) => ListTile(
+                              leading: Icon(Icons.text_snippet),
+                              title: Text(dispensa.nome),
+                              onTap: () {
+                                setState(() {
+                                  idDispensa = dispensa.id;
+                                });
+                              },
+                            ))
+                        .toList();
+                    return new ListView.builder(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      itemCount: oggetti.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return oggetti[index];
+                      },
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
         floatingActionButton: FloatingActionButton(
             backgroundColor: Colori.primario,
             child: Icon(Icons.add),
@@ -45,41 +100,41 @@ class _MyDispensaState extends State<MyDispensa> {
                       fontSize: 20.0,
                       fontWeight: FontWeight.w600)),
               SizedBox(height: 10.0),
-              FutureBuilder(
-                future: httpService.getDispense(),
-                builder: (BuildContext context,
-                    AsyncSnapshot<List<Dispensa>> snapshot) {
-                  if (!snapshot.hasData) {
-                    return Center(child: CircularProgressIndicator());
-                  } else {
-                    List<Dispensa> posts = snapshot.data;
-                    List<Widget> oggetti = posts
-                        .map(
-                          (Dispensa dispensa) => _itemBuilder(dispensa),
-                        )
-                        .toList();
-                    return new ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      shrinkWrap: true,
-                      itemCount: oggetti.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return oggetti[index];
-                      },
-                    );
-                  }
-                },
-              ),
+              idDispensa !=
+                  null ? FutureBuilder(
+                      future: httpService.getPosts(idDispensa),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<List<Post>> snapshot) {
+                        if (!snapshot.hasData) {
+                          return Center(child: CircularProgressIndicator());
+                        } else {
+                          List<Post> posts = snapshot.data;
+                          List<Widget> oggetti = posts
+                              .map(
+                                (Post post) => _itemBuilder(post),
+                              )
+                              .toList();
+                          return new ListView.builder(
+                            scrollDirection: Axis.vertical,
+                            shrinkWrap: true,
+                            itemCount: oggetti.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return oggetti[index];
+                            },
+                          );
+                        }
+                      }):Text('Seleziona dispensa'),
             ],
           ),
         )));
   }
 
-  Widget _itemBuilder(Dispensa dispensa) {
+  Widget _itemBuilder(Post post) {
     return Container(
       child: Stack(
         //alignment: AlignmentDirectional.bottomEnd,
         children: [
-          TileOverlay(dispensa),
+          TileOverlay(post),
         ],
       ),
     );
@@ -87,8 +142,8 @@ class _MyDispensaState extends State<MyDispensa> {
 }
 
 class TileOverlay extends StatelessWidget {
-  final Dispensa dispensa;
-  TileOverlay(this.dispensa);
+  final Post post;
+  TileOverlay(this.post);
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -101,29 +156,30 @@ class TileOverlay extends StatelessWidget {
               //padding: EdgeInsets.symmetric(vertical: 5.0),
               /*decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.5)), //opacità tra 0 e 1*/
-              child: DispensaTile(dispensa: dispensa)),
+              child: PostTile(post: post)),
         )
       ],
     );
   }
 }
 
-class DispensaTile extends StatefulWidget {
-  DispensaTile({this.dispensa});
+class PostTile extends StatefulWidget {
+  PostTile({this.post});
 
-  final Dispensa dispensa;
+  final Post post;
   @override
-  _DispensaTileState createState() =>
-      new _DispensaTileState(dispensa: dispensa);
+  _PostTileState createState() => new _PostTileState(post: post);
 }
 
 //----------------------------------------------------------------------------------------//
 
-class _DispensaTileState extends State<DispensaTile> {
-  _DispensaTileState({
-    this.dispensa,
+class _PostTileState extends State<PostTile> {
+  _PostTileState({
+    this.post,
   }); //!default value, parametri tra {} vuol dire che sono opzionali
-  final Dispensa dispensa;
+  final Post post;
+  final String postsURL =
+      "https://thispensa.herokuapp.com/aggiornaProdottoDispensa";
 
   @override
   Widget build(BuildContext context) {
@@ -133,13 +189,29 @@ class _DispensaTileState extends State<DispensaTile> {
       alignment: Alignment.topLeft,
       margin: const EdgeInsets.only(left: 12.0),
       child: Text(
-        dispensa.nome,
+        post.name.toUpperCase(),
         //style: Theme.of(context).textTheme.bodyText1,
         style: TextStyle(
           fontSize: 14,
         ),
         overflow: TextOverflow.fade,
         //textAlign: TextAlign.justify,
+      ),
+    );
+
+    final numberPicker = NumberPicker(
+      textStyle: TextStyle(fontSize: 12),
+      value: post.qta,
+      minValue: 0,
+      maxValue: 100,
+      step: 1,
+      itemHeight: 50,
+      itemWidth: 50,
+      axis: Axis.horizontal,
+      onChanged: (value) => setState(() => post.qta = value),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black26),
       ),
     );
 
@@ -150,12 +222,13 @@ class _DispensaTileState extends State<DispensaTile> {
       iconSize: 35,
       onPressed: () async {
         var params = {
-          "idDispensa": dispensa.id,
+          "barcode": post.barcode,
+          "number": numberPicker.value,
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
         };
         print(params);
-        String postsURL = "https://thispensa.herokuapp.com/eliminaDispensa";
+
         http.Response res = await http.post(Uri.parse(postsURL),
             body: json.encode(params),
             headers: {
@@ -167,7 +240,8 @@ class _DispensaTileState extends State<DispensaTile> {
         if (res.statusCode == 200) {
           dynamic body = jsonDecode(res.body);
 
-          print(body);
+          List<dynamic> lista = body["prodotti"];
+          print(lista);
         } else {
           throw "Unable to retrieve posts.";
         }
@@ -200,7 +274,10 @@ class _DispensaTileState extends State<DispensaTile> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         //mainAxisAlignment: MainAxisAlignment.value(),
-                        children: [trash],
+                        children: [
+                          numberPicker,
+                          trash,
+                        ],
                       ),
                     ),
                   ],

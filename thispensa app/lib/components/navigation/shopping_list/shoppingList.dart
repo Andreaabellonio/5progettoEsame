@@ -34,6 +34,10 @@ Widget _buildTask(int index) {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+    appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text('My Shop'),
+            ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colori.primario,
         child: Icon(Icons.add),

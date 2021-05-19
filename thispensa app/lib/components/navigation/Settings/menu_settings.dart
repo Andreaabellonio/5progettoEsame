@@ -45,18 +45,23 @@ class _SettingsPage extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text('Settings'),
+        ),
         body: Container(
             child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        //classi in user/screens/screens.dart
-        buildButton("Account", Icons.perm_identity, Account()),
-        buildButton("Invita la famiglia", Icons.supervisor_account, Invite()),
-        buildButton("Privacy", Icons.lock, Privacy()),
-        buildButton("Assistenza", Icons.help_outline, Help()),
-        buildButton("Informazioni", Icons.info, Info()),
-        buildButton("Tema", Icons.color_lens, Themes()),
-      ],
-    )));
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            //classi in user/screens/screens.dart
+            buildButton("Account", Icons.perm_identity, Account()),
+            buildButton(
+                "Invita la famiglia", Icons.supervisor_account, Invite()),
+            buildButton("Privacy", Icons.lock, Privacy()),
+            buildButton("Assistenza", Icons.help_outline, Help()),
+            buildButton("Informazioni", Icons.info, Info()),
+            buildButton("Tema", Icons.color_lens, Themes()),
+          ],
+        )));
   }
 }

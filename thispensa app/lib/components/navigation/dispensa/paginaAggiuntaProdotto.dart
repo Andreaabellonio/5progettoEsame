@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:thispensa/components/productWidgets/datePicker.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:thispensa/components/productWidgets/flutterMobileVision.dart';
 import 'dart:convert';
 import 'dart:io';
+
+final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class PaginaAggiuntaProdotto extends StatefulWidget {
   String barcode;
@@ -40,10 +43,7 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
     });
   }
 
-
   callback2(stringa) {
-   
-
     setState(() {
       controllerData.text = stringa;
     });
@@ -110,34 +110,34 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
           Text(aaaaa),
           TextButton(
               child: Text("aggiungi"),
-              onPressed: () {
+              onPressed: () async {
                 //mando la chiamata
                 String data = controllerData.text;
                 int quantita = int.parse(controllerQuantita.text);
                 print(data + " " + quantita.toString());
-                var url = "https://thispensa.herokuapp.com/inserisciProdottoDispensa";
+                var url =
+                    "https://thispensa.herokuapp.com/inserisciProdottoDispensa";
                 var params = {
-                  "idUtente": "60491b3739c4c1f0512d0c38",
-                  "idDispensa": "60491bb339c4c1f0512d0c3a",
+                  "uid": _auth.currentUser.uid.toString(),
+                  "tokenJWT": await _auth.currentUser.getIdToken(),
+                  "nome": nomeProdotto,
+                  "idDispensa": "60a57412a3423c6713fd76a4",
                   "qta": quantita,
                   "dataScadenza": data,
                   "barcode": barcode
                 };
                 print(params);
                 //? Richiesta post al server node con parametri
-                http.post(Uri.parse(url),
-                    body: json.encode(params),
-                    headers: {
-                      "Accept": "application/json",
-                      HttpHeaders.contentTypeHeader: "application/json"
-                    }).then((response) async {
+                http.post(Uri.parse(url), body: json.encode(params), headers: {
+                  "Accept": "application/json",
+                  HttpHeaders.contentTypeHeader: "application/json"
+                }).then((response) async {
                   Map data = jsonDecode(response.body);
 
                   if (data["errore"])
                     print("NOOOOOOOOOOOOOOOOOOOOOOOo");
                   else
                     print("fattoooo");
-
 
                   Navigator.of(context).pop();
                 });
