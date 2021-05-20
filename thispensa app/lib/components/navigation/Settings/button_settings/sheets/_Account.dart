@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thispensa/components/login/autenticazione.dart';
 import '../../../../../styles/colors.dart';
 //import 'package:flutter_image_ppicker/home_screen.dart';
@@ -20,10 +22,17 @@ class AccountState extends State<Account> {
   TextEditingController _passwordNewController = TextEditingController();
   bool _success;
   String _err = "";
+  bool googleLogin = true;
 
   @override
   void initState() {
+    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
+    EasyLoading.instance.userInteractions = false;
+    EasyLoading.show();
     Future.delayed(Duration.zero, () async {
+      Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _prefs;
+      googleLogin = prefs.getBool("googleLogin");
       var params = {
         "uid": _auth.currentUser.uid.toString(),
         "tokenJWT": await _auth.currentUser.getIdToken()
@@ -46,6 +55,7 @@ class AccountState extends State<Account> {
             );
           });
         }
+        EasyLoading.dismiss();
       });
     });
     super.initState();
@@ -115,7 +125,7 @@ class AccountState extends State<Account> {
                           },
                         ),
                         TextFormField(
-                          controller: _nameController,
+                          controller: _surnameController,
                           decoration:
                               const InputDecoration(labelText: 'Cognome'),
                           validator: (String value) {
@@ -169,6 +179,10 @@ class AccountState extends State<Account> {
                           if (_formKey1.currentState.validate()) {
                             if (_nameController.text != "" &&
                                 _surnameController.text != "") {
+                              EasyLoading.instance.indicatorType =
+                                  EasyLoadingIndicatorType.foldingCube;
+                              EasyLoading.instance.userInteractions = false;
+                              EasyLoading.show();
                               try {
                                 var params = {
                                   "uid": _auth.currentUser.uid.toString(),
@@ -195,8 +209,10 @@ class AccountState extends State<Account> {
                                       ),
                                     );
                                   }
+                                  EasyLoading.dismiss();
                                 });
                               } catch (err) {
+                                EasyLoading.dismiss();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text("Errore"),
@@ -214,127 +230,150 @@ class AccountState extends State<Account> {
                           }
                         },
                       ),
-                      SizedBox(height: 30),
-                      Divider(
-                        thickness: 4,
-                        color: Colors.grey,
-                      ),
-                      Form(
-                          key: _formKey2,
-                          child: Column(
-                            children: [
-                              Text("Modifica password"),
-                              TextFormField(
-                                controller: _passwordOldController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Vecchia password'),
-                                validator: (String value) {
-                                  if (value.isEmpty) {
-                                    return 'Inserisci una password per continuare';
-                                  }
-                                  return null;
-                                },
-                                obscureText: true,
-                              ),
-                              TextFormField(
-                                controller: _passwordNewController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Nuova password'),
-                                validator: (String value) {
-                                  if (value.isEmpty) {
-                                    return 'Inserisci una password per continuare';
-                                  }
-                                  return null;
-                                },
-                                obscureText: true,
-                              ),
-                              TextFormField(
-                                controller: _passwordChkController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Conferma password'),
-                                validator: (String value) {
-                                  if (value.isEmpty) {
-                                    return 'Inserisci una password per continuare';
-                                  }
-                                  return null;
-                                },
-                                obscureText: true,
-                              ),
-                              SizedBox(height: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                      (!googleLogin) ? SizedBox(height: 30) : SizedBox.shrink(),
+                      (!googleLogin)
+                          ? Divider(
+                              thickness: 4,
+                              color: Colors.grey,
+                            )
+                          : SizedBox.shrink(),
+                      (!googleLogin)
+                          ? Form(
+                              key: _formKey2,
+                              child: Column(
                                 children: [
-                                  ElevatedButton.icon(
-                                    icon: Icon(
-                                      Icons.lock,
-                                      color: Colors.grey[400],
-                                    ),
-                                    label: Text(
-                                      "Cambia password",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.normal,
-                                        fontStyle: FontStyle.normal,
-                                        foreground: paint,
-                                      ),
-                                    ),
-                                    style: ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStateProperty.all<Color>(
-                                                Colori.primario)),
-                                    onPressed: () async {
-                                      if (_formKey2.currentState.validate()) {
-                                        final User user = (await _auth
-                                                .signInWithEmailAndPassword(
-                                          email: _auth.currentUser.email,
-                                          password: _passwordOldController.text,
-                                        ))
-                                            .user;
-                                        if (user.emailVerified) {
-                                          if (_passwordNewController.text ==
-                                              _passwordChkController.text) {
-                                            if (_passwordOldController.text !=
-                                                _passwordNewController.text) {
-                                              await _auth.currentUser
-                                                  .updatePassword(
-                                                      _passwordNewController
-                                                          .text);
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
+                                  Text("Modifica password"),
+                                  TextFormField(
+                                    controller: _passwordOldController,
+                                    decoration: const InputDecoration(
+                                        labelText: 'Vecchia password'),
+                                    validator: (String value) {
+                                      if (value.isEmpty) {
+                                        return 'Inserisci una password per continuare';
+                                      }
+                                      return null;
+                                    },
+                                    obscureText: true,
+                                  ),
+                                  TextFormField(
+                                    controller: _passwordNewController,
+                                    decoration: const InputDecoration(
+                                        labelText: 'Nuova password'),
+                                    validator: (String value) {
+                                      if (value.isEmpty) {
+                                        return 'Inserisci una password per continuare';
+                                      }
+                                      return null;
+                                    },
+                                    obscureText: true,
+                                  ),
+                                  TextFormField(
+                                    controller: _passwordChkController,
+                                    decoration: const InputDecoration(
+                                        labelText: 'Conferma password'),
+                                    validator: (String value) {
+                                      if (value.isEmpty) {
+                                        return 'Inserisci una password per continuare';
+                                      }
+                                      return null;
+                                    },
+                                    obscureText: true,
+                                  ),
+                                  SizedBox(height: 10),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        icon: Icon(
+                                          Icons.lock,
+                                          color: Colors.grey[400],
+                                        ),
+                                        label: Text(
+                                          "Cambia password",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.normal,
+                                            fontStyle: FontStyle.normal,
+                                            foreground: paint,
+                                          ),
+                                        ),
+                                        style: ButtonStyle(
+                                            backgroundColor:
+                                                MaterialStateProperty.all<
+                                                    Color>(Colori.primario)),
+                                        onPressed: () async {
+                                          if (_formKey2.currentState
+                                              .validate()) {
+                                            final User user = (await _auth
+                                                    .signInWithEmailAndPassword(
+                                              email: _auth.currentUser.email,
+                                              password:
+                                                  _passwordOldController.text,
+                                            ))
+                                                .user;
+                                            if (user.emailVerified) {
+                                              if (_passwordNewController.text ==
+                                                  _passwordChkController.text) {
+                                                if (_passwordOldController
+                                                        .text !=
+                                                    _passwordNewController
+                                                        .text) {
+                                                  EasyLoading.instance
+                                                          .indicatorType =
+                                                      EasyLoadingIndicatorType
+                                                          .foldingCube;
+                                                  EasyLoading.instance
+                                                      .userInteractions = false;
+                                                  EasyLoading.show();
+                                                  await _auth.currentUser
+                                                      .updatePassword(
+                                                          _passwordNewController
+                                                              .text);
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                          "Password aggiornata, rieffettuare l'accesso"),
+                                                    ),
+                                                  );
+                                                  await _signOut();
+                                                  await Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              PaginaAutenticazione()));
+                                                } else {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                          "La nuova password deve essere differente da quella precedente"),
+                                                    ),
+                                                  );
+                                                }
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                        const SnackBar(
                                                   content: Text(
-                                                      "Password aggiornata, rieffettuare l'accesso"),
-                                                ),
-                                              );
-                                              await _signOut();
-                                              await Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          PaginaAutenticazione()));
+                                                      "Le password devono corrispondere!"),
+                                                ));
+                                              }
                                             } else {
                                               ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                      "Le password devono corrispondere"),
-                                                ),
-                                              );
+                                                  .showSnackBar(const SnackBar(
+                                                content: Text(
+                                                    "Problema di accesso relativo all'acccount."),
+                                              ));
                                             }
                                           }
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(const SnackBar(
-                                            content: Text(
-                                                "La nuova password deve essere differente da quella precedente"),
-                                          ));
-                                        }
-                                      }
-                                    },
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ],
-                              ),
-                            ],
-                          )),
+                              ))
+                          : SizedBox.shrink(),
                       Divider(
                         thickness: 4,
                         color: Colors.grey,
@@ -363,7 +402,7 @@ class AccountState extends State<Account> {
                                     title: const Text(
                                         'Sei sicuro di voler eliminare DEFINITIVAMENTE l\'account?'),
                                     content: const Text(
-                                        'L\'eliminazione include solamente il tuo account e le tue dispense.'),
+                                        'L\'eliminazione include il tuo account, le dispense e le liste della spesa create da te.'),
                                     actions: <Widget>[
                                       TextButton(
                                         onPressed: () =>
@@ -372,6 +411,12 @@ class AccountState extends State<Account> {
                                       ),
                                       TextButton(
                                         onPressed: () async {
+                                          EasyLoading.instance.indicatorType =
+                                              EasyLoadingIndicatorType
+                                                  .foldingCube;
+                                          EasyLoading.instance
+                                              .userInteractions = false;
+                                          EasyLoading.show();
                                           try {
                                             var params = {
                                               "uid": _auth.currentUser.uid
@@ -390,36 +435,30 @@ class AccountState extends State<Account> {
                                                   HttpHeaders.contentTypeHeader:
                                                       "application/json"
                                                 }).then((response) async {
-                                              await _auth.signOut();
+                                              await _auth.currentUser.delete();
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      "Account eliminato con successo"),
+                                                ),
+                                              );                                              
+                                              await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          MyHomePage()));
                                             });
-                                            await _auth.currentUser.delete();
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    "Account eliminato con successo"),
-                                              ),
-                                            );
                                           } catch (e) {
                                             print(e);
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               SnackBar(
                                                 content: Text(
-                                                    'Accesso con google fallito: $e'),
+                                                    'Errore nell\'eliminazione dell\'account $e'),
                                               ),
                                             );
                                           }
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(const SnackBar(
-                                            content: Text('Account eliminato'),
-                                          ));
-                                          await _signOut();
-                                          await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      MyHomePage()));
                                         },
                                         child: const Text('SI'),
                                       ),
@@ -445,10 +484,16 @@ class AccountState extends State<Account> {
   }
 
   Future<void> _signOut() async {
-    http.post(Uri.https('thispensa.herokuapp.com', '/logout'), headers: {
-      "Accept": "application/json",
-      HttpHeaders.contentTypeHeader: "application/json"
-    }).then((response) async {
+    var params = {
+      "uid": _auth.currentUser.uid.toString(),
+      "tokenJWT": await _auth.currentUser.getIdToken()
+    };
+    http.post(Uri.https('thispensa.herokuapp.com', '/logout'),
+        body: json.encode(params),
+        headers: {
+          "Accept": "application/json",
+          HttpHeaders.contentTypeHeader: "application/json"
+        }).then((response) async {
       await _auth.signOut();
     });
   }

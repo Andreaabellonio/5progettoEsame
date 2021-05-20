@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -10,6 +9,7 @@ import 'package:flutter_signin_button/button_view.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:prompt_dialog/prompt_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../navigation/navigation_bar.dart';
 import '../../styles/colors.dart';
@@ -41,35 +41,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
-    Future.delayed(Duration.zero, () async {
-      if (_auth.currentUser != null) if (_auth.currentUser.emailVerified) {
-        try {
-          var params = {
-            "uid": _auth.currentUser.uid.toString(),
-            "tokenJWT": await _auth.currentUser.getIdToken()
-          };
-          http.post(Uri.https('thispensa.herokuapp.com', '/login'),
-              body: json.encode(params),
-              headers: {
-                "Accept": "application/json",
-                "withCredential": "true",
-                HttpHeaders.contentTypeHeader: "application/json"
-              }).then((response) async {
-            Map data = jsonDecode(response.body);
-            if (!data["errore"]) {
-              inviaTokenFCM();
-              Future.microtask(() => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (BuildContext context) => MyNavWidget())));
-            }
-          });
-        } catch (ex) {
-          print(ex);
-        }
-      }
-    });
-    super.initState();
+    EasyLoading.dismiss();
   }
 
   Widget build(BuildContext context) {
@@ -103,22 +75,6 @@ class _MyHomePageState extends State<MyHomePage> {
           )),
     );
   }
-}
-
-Future<void> inviaTokenFCM() async {
-  String token = await FirebaseMessaging.instance.getToken();
-  var params = {
-    "uid": _auth.currentUser.uid.toString(),
-    "token": token,
-    "tokenJWT": await _auth.currentUser.getIdToken()
-  };
-  http.post(Uri.https('thispensa.herokuapp.com', '/aggiornaTokenFCM'),
-      body: json.encode(params),
-      headers: {
-        "Accept": "application/json",
-        "withCredential": "true",
-        HttpHeaders.contentTypeHeader: "application/json"
-      });
 }
 
 class RegisterPage extends StatefulWidget {
@@ -501,7 +457,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                             backgroundColor: MaterialStateProperty.all<Color>(
                                 Colori.primarioScuro)),
                         onPressed: () {
-                          Navigator.push(
+                          Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                   builder: (BuildContext context) =>
@@ -530,16 +486,29 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                             backgroundColor: MaterialStateProperty.all<Color>(
                                 Colori.primarioScuro)),
                         onPressed: () async {
-                          String email = await prompt(context);
-                          try {
-                            await _auth.sendPasswordResetEmail(email: email);
+                          String email = await prompt(context,
+                              title: Text(
+                                  "Inserisci l'email per inviare l'email di recupero password"),
+                              textOK: Text("Conferma"),
+                              textCancel: Text("Annulla"),
+                              autoFocus: true);
+                          if (email != "") {
+                            try {
+                              await _auth.sendPasswordResetEmail(email: email);
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content: Text(
+                                    'Email per resettare la password inviata. Controlla la tua casella.'),
+                              ));
+                            } catch (ex) {
+                              print(ex);
+                            }
+                          } else {
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(const SnackBar(
-                              content: Text(
-                                  'Email per resettare la password inviata. Controlla la tua casella.'),
+                              content:
+                                  Text('Inserire una email per continuare'),
                             ));
-                          } catch (ex) {
-                            print(ex);
                           }
                         },
                       ),
@@ -568,9 +537,10 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
           idToken: googleAuth.idToken,
         );
         userCredential = await _auth.signInWithCredential(googleAuthCredential);
-        print(userCredential);
       }
-
+      EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
+      EasyLoading.instance.userInteractions = false;
+      EasyLoading.show();
       final user = userCredential.user;
       var params = {
         "uid": user.uid.toString(),
@@ -585,9 +555,13 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
             HttpHeaders.contentTypeHeader: "application/json"
           }).then((response) async {
         Map data = jsonDecode(response.body);
-        if (!data["errore"])
-          Navigator.push(
+        if (!data["errore"]) {
+          Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+          final SharedPreferences prefs = await _prefs;
+          prefs.setBool("googleLogin", true);
+          Navigator.pushReplacement(
               context, MaterialPageRoute(builder: (context) => MyNavWidget()));
+        }
       });
     } catch (e) {
       print(e);
@@ -607,6 +581,9 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
   }
 
   Future<void> _signInWithEmailAndPassword() async {
+    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
+    EasyLoading.instance.userInteractions = false;
+    EasyLoading.show();
     try {
       final User user = (await _auth.signInWithEmailAndPassword(
         email: _emailController.text,
@@ -629,7 +606,11 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
           if (!data["errore"]) {
             _emailController.text = "";
             _passwordController.text = "";
-            Navigator.push(
+            //? salvo come ha fatto il login per poi non lasciargli cambiare la password dalla pagina dell'utente
+            Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+            final SharedPreferences prefs = await _prefs;
+            prefs.setBool("googleLogin", false);
+            Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                     builder: (BuildContext context) => MyNavWidget()));

@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:thispensa/components/login/autenticazione.dart';
 import 'package:thispensa/styles/colors.dart';
 //import 'user/screens/screens.dart';
 import 'button_settings/stgButton.dart';
@@ -30,11 +32,11 @@ class _SettingsPage extends State<SettingsPage> {
           padding:EdgeInsets.symmetric(vertical: 5.0),
           child:*/
         ElevatedButton.icon(
-      onPressed: () => {
+      onPressed: () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => action),
-        )
+        );
       },
       icon: Icon(icon),
       style: ElevatedButton.styleFrom(
@@ -89,7 +91,16 @@ class _SettingsPage extends State<SettingsPage> {
                   backgroundColor:
                       MaterialStateProperty.all<Color>(Colori.primario)),
               onPressed: () async {
+                EasyLoading.instance.indicatorType =
+                    EasyLoadingIndicatorType.foldingCube;
+                EasyLoading.instance.userInteractions = false;
+                EasyLoading.show();
                 await _signOut();
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (BuildContext context) =>
+                            PaginaAutenticazione()));
               },
             ),
           ],
@@ -107,7 +118,10 @@ class _SettingsPage extends State<SettingsPage> {
           "Accept": "application/json",
           HttpHeaders.contentTypeHeader: "application/json"
         }).then((response) async {
-      await _auth.signOut();
+      _auth.signOut().then((value) => Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (BuildContext context) => PaginaAutenticazione())));
     });
   }
 }

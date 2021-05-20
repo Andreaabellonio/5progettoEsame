@@ -10,7 +10,7 @@ const admin = require("firebase-admin");
 const serviceAccount = require("./thispensa-f54e0-firebase-adminsdk-nglrb-963863e898.json");
 
 //? ISTANZA MONGO CLIENT
-const url = "mongodb+srv://server:rUF8anQX14Osx5MH@cluster0.1wbrt.mongodb.net/thispensa?retryWrites=true&w=majority";
+const url = "mongodb+srv://server:ykBndA9L5mzMdsgy@cluster0.xsllc.mongodb.net/thispensa?retryWrites=true&w=majority";
 const nomeDb = "thispensa";
 
 //? CREAZIONE DEL SERVER
@@ -349,24 +349,14 @@ app.post("/aggiornaTokenFCM", function (req, res) {
     });
 });
 
-//? DATI INPUT
-//barcode
+
+//? elimino solamente le dispense e le liste create dell'utente
 app.post("/eliminaAccount", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1, listeDellaSpesa: 1 }, function (data) {
-        data[0].dispense.forEach(element => {
-            mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: element }, function (data) {
-
+    mongoFunctions.deleteMany(res, nomeDb, "dispense", { creatore: req.body.uid }, function (data) {
+        mongoFunctions.deleteMany(res, nomeDb, "liste_della_spesa", { creatore: req.body.uid }, function (data) {
+            mongoFunctions.deleteMany(res, nomeDb, "utenti", { _id: req.body.uid }, function (data) {
                 res.send(JSON.stringify({ errore: false }));
             });
-        });
-        data[0].listeDellaSpesa.forEach(element => {
-            mongoFunctions.deleteMany(res, nomeDb, "liste_della_spesa", { _id: element }, function (data) {
-
-                res.send(JSON.stringify({ errore: false }));
-            });
-        });
-        mongoFunctions.deleteMany(res, nomeDb, "utenti", { _id: req.body.uid }, function (data) {
-            res.send(JSON.stringify({ errore: false }));
         });
     });
 });
@@ -374,6 +364,7 @@ app.post("/eliminaAccount", function (req, res) {
 //? LOGOUT
 app.post("/logout", function (req, res) {
     req.session.destroy();
+    res.send(JSON.stringify({ errore: false }));
 });
 //#endregion
 

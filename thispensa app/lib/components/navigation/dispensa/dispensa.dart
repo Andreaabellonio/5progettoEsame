@@ -3,13 +3,11 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:thispensa/components/navigation/navigation_bar.dart';
 import 'package:thispensa/models/dispensa_model.dart';
 import 'package:thispensa/models/post_model.dart';
 import '../../../styles/colors.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'chiamateServer/http_service.dart';
-import 'package:thispensa/models/dispensa_model.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -52,26 +50,30 @@ class _MyDispensaState extends State<MyDispensa> {
                     return Center(child: CircularProgressIndicator());
                   } else {
                     List<Dispensa> posts = snapshot.data;
-                    idDispensa = posts[0].id;
-                    List<Widget> oggetti = posts
-                        .map((Dispensa dispensa) => ListTile(
-                              leading: Icon(Icons.text_snippet),
-                              title: Text(dispensa.nome),
-                              onTap: () {
-                                setState(() {
-                                  idDispensa = dispensa.id;
-                                });
-                              },
-                            ))
-                        .toList();
-                    return new ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      shrinkWrap: true,
-                      itemCount: oggetti.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return oggetti[index];
-                      },
-                    );
+                    if (posts.length > 0) {
+                      idDispensa = posts[0].id;
+                      List<Widget> oggetti = posts
+                          .map((Dispensa dispensa) => ListTile(
+                                leading: Icon(Icons.text_snippet),
+                                title: Text(dispensa.nome),
+                                onTap: () {
+                                  setState(() {
+                                    idDispensa = dispensa.id;
+                                  });
+                                },
+                              ))
+                          .toList();
+                      return new ListView.builder(
+                        scrollDirection: Axis.vertical,
+                        shrinkWrap: true,
+                        itemCount: oggetti.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return oggetti[index];
+                        },
+                      );
+                    } else {
+                      return Text("Nessuna dispensa presente");
+                    }
                   }
                 },
               ),
@@ -100,8 +102,8 @@ class _MyDispensaState extends State<MyDispensa> {
                       fontSize: 20.0,
                       fontWeight: FontWeight.w600)),
               SizedBox(height: 10.0),
-              idDispensa !=
-                  null ? FutureBuilder(
+              idDispensa != null
+                  ? FutureBuilder(
                       future: httpService.getPosts(idDispensa),
                       builder: (BuildContext context,
                           AsyncSnapshot<List<Post>> snapshot) {
@@ -123,7 +125,8 @@ class _MyDispensaState extends State<MyDispensa> {
                             },
                           );
                         }
-                      }):Text('Seleziona dispensa'),
+                      })
+                  : Text('Seleziona dispensa'),
             ],
           ),
         )));

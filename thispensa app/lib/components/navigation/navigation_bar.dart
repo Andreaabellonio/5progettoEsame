@@ -1,12 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:thispensa/components/navigation/dispensa/dispensa.dart';
 import 'package:thispensa/components/navigation/shopping_list/shoppingList.dart';
+import 'package:thispensa/styles/colors.dart';
 import 'Settings/menu_settings.dart';
 
+class PaginaVera extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Thispensa',
+      theme: ThemeData(
+        primaryColor: Colori.primario,
+      ),
+      home: MyNavWidget(),
+      builder: EasyLoading.init(),
+    );
+  }
+}
+
 class MyNavWidget extends StatefulWidget {
-  MyNavWidget({this.auth});
-  final FirebaseAuth auth;
+  MyNavWidget({Key key}) : super(key: key);
 
   //MyNavWidget({Key key}) : super(key: key);
 
@@ -15,12 +30,16 @@ class MyNavWidget extends StatefulWidget {
 }
 
 class _MyNavWidgetState extends State<MyNavWidget> {
-  _MyNavWidgetState({this.auth});
-  final FirebaseAuth auth;
   MyDispensa obj;
-  
-
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      EasyLoading.dismiss();
+    });
+  }
 
   static List<Widget> _widgetOptions = <Widget>[
     /*Container(
@@ -49,7 +68,6 @@ class _MyNavWidgetState extends State<MyNavWidget> {
     });
   }
 
-  @override
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
