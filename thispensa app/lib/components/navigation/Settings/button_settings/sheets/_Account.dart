@@ -13,11 +13,11 @@ import '../stgButton.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class AccountState extends State<Account> {
-  TextEditingController _nameController;
-  TextEditingController _surnameController;
-  TextEditingController _passwordOldController;
-  TextEditingController _passwordChkController;
-  TextEditingController _passwordNewController;
+  TextEditingController _nameController = TextEditingController();
+  TextEditingController _surnameController = TextEditingController();
+  TextEditingController _passwordOldController = TextEditingController();
+  TextEditingController _passwordChkController = TextEditingController();
+  TextEditingController _passwordNewController = TextEditingController();
   bool _success;
   String _err = "";
 
@@ -75,13 +75,15 @@ class AccountState extends State<Account> {
     var paint = Paint();
     paint.color = Colors.black;
     paint.style = PaintingStyle.fill;
+    final GlobalKey<FormState> _formKey1 = GlobalKey<FormState>();
+    final GlobalKey<FormState> _formKey2 = GlobalKey<FormState>();
     return Scaffold(
         appBar: AppBar(
           title: Text('Account'),
         ),
         body: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(10.0),
             child: Column(
               children: <Widget>[
                 /*new Container(
@@ -97,25 +99,50 @@ class AccountState extends State<Account> {
                 ),*/
 
                 //CREAZIONE DELLE DUE TEXTBOX
-                textBoxController("Nome", _nameController),
-                textBoxController("Cognome", _surnameController),
-                TextField(
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    hintText: _auth.currentUser.email,
-                    suffixIcon: Padding(
-                      padding: EdgeInsets.only(top: 20),
-                      child: Text(
-                        'Email',
-                        style: TextStyle(
-                          color: Colors.grey,
+                Form(
+                    key: _formKey1,
+                    child: Column(
+                      children: [
+                        Text("Modifica dati account"),
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(labelText: 'Nome'),
+                          validator: (String value) {
+                            if (value.isEmpty) {
+                              return 'Inserisci un nome per continuare';
+                            }
+                            return null;
+                          },
                         ),
-                      ),
-                    ),
-                  ),
-                ),
+                        TextFormField(
+                          controller: _nameController,
+                          decoration:
+                              const InputDecoration(labelText: 'Cognome'),
+                          validator: (String value) {
+                            if (value.isEmpty) {
+                              return 'Inserisci un cognome per continuare';
+                            }
+                            return null;
+                          },
+                        ),
+                        TextField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            hintText: _auth.currentUser.email,
+                            suffixIcon: Padding(
+                              padding: EdgeInsets.only(top: 20),
+                              child: Text(
+                                'Email',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )),
                 //textBoxController("E-Mail", _emailController),
-
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   alignment: Alignment.center,
@@ -139,103 +166,180 @@ class AccountState extends State<Account> {
                             backgroundColor: MaterialStateProperty.all<Color>(
                                 Colori.primario)),
                         onPressed: () async {
-                          if (_nameController.text != "" &&
-                              _surnameController.text != "") {
-                            try {
-                              var params = {
-                                "uid": _auth.currentUser.uid.toString(),
-                                "tokenJWT":
-                                    await _auth.currentUser.getIdToken(),
-                                "nome": _nameController.text,
-                                "cognome": _surnameController.text
-                              };
-                              http.post(
-                                  Uri.https('thispensa.herokuapp.com',
-                                      '/aggiornaUtente'),
-                                  body: json.encode(params),
-                                  headers: {
-                                    "Accept": "application/json",
-                                    HttpHeaders.contentTypeHeader:
-                                        "application/json"
-                                  }).then((response) async {
-                                Map data = jsonDecode(response.body);
-                                if (!data["errore"]) {
-                                  _success = true;
-                                }
-                              });
-                            } catch (err) {
-                              setState(() {
-                                _err = err.message;
-                                _success = false;
-                              });
-                            }
-                          } else {
-                            setState(() {
-                              _err = "Inserire un nome e una password!";
-                              _success = false;
-                            });
-                          }
-                        },
-                      ),
-                      TextField(
-                        controller: _passwordOldController,
-                        decoration: const InputDecoration(
-                            labelText: 'Vecchia password'),
-                        obscureText: true,
-                      ),
-                      TextField(
-                        controller: _passwordNewController,
-                        decoration:
-                            const InputDecoration(labelText: 'Nuova password'),
-                        obscureText: true,
-                      ),
-                      TextField(
-                        controller: _passwordChkController,
-                        decoration: const InputDecoration(
-                            labelText: 'Conferma password'),
-                        obscureText: true,
-                      ),
-                      ElevatedButton.icon(
-                        icon: Icon(
-                          Icons.lock,
-                          color: Colors.grey[400],
-                        ),
-                        label: Text(
-                          "Cambia password",
-                          style: TextStyle(
-                            fontWeight: FontWeight.normal,
-                            fontStyle: FontStyle.normal,
-                            foreground: paint,
-                          ),
-                        ),
-                        style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(
-                                Colori.primario)),
-                        onPressed: () async {
-                          final User user =
-                              (await _auth.signInWithEmailAndPassword(
-                            email: _auth.currentUser.email,
-                            password: _passwordOldController.text,
-                          ))
-                                  .user;
-                          if (user.emailVerified) {
-                            if (_passwordNewController.text ==
-                                _passwordChkController.text) {
-                              await _auth.currentUser
-                                  .updatePassword(_passwordNewController.text);
-                              await _signOut();
-                              await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          PaginaAutenticazione()));
+                          if (_formKey1.currentState.validate()) {
+                            if (_nameController.text != "" &&
+                                _surnameController.text != "") {
+                              try {
+                                var params = {
+                                  "uid": _auth.currentUser.uid.toString(),
+                                  "tokenJWT":
+                                      await _auth.currentUser.getIdToken(),
+                                  "nome": _nameController.text,
+                                  "cognome": _surnameController.text
+                                };
+                                http.post(
+                                    Uri.https('thispensa.herokuapp.com',
+                                        '/aggiornaUtente'),
+                                    body: json.encode(params),
+                                    headers: {
+                                      "Accept": "application/json",
+                                      HttpHeaders.contentTypeHeader:
+                                          "application/json"
+                                    }).then((response) async {
+                                  Map data = jsonDecode(response.body);
+                                  if (!data["errore"]) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            "Aggiornamento dei dati avvenuto con successo"),
+                                      ),
+                                    );
+                                  }
+                                });
+                              } catch (err) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Errore"),
+                                  ),
+                                );
+                              }
                             } else {
-                              _success = false;
-                              _err = "Le password devono corrispondere!";
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text("Inserire un nome e una password!"),
+                                ),
+                              );
                             }
                           }
                         },
                       ),
+                      SizedBox(height: 30),
+                      Divider(
+                        thickness: 4,
+                        color: Colors.grey,
+                      ),
+                      Form(
+                          key: _formKey2,
+                          child: Column(
+                            children: [
+                              Text("Modifica password"),
+                              TextFormField(
+                                controller: _passwordOldController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Vecchia password'),
+                                validator: (String value) {
+                                  if (value.isEmpty) {
+                                    return 'Inserisci una password per continuare';
+                                  }
+                                  return null;
+                                },
+                                obscureText: true,
+                              ),
+                              TextFormField(
+                                controller: _passwordNewController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Nuova password'),
+                                validator: (String value) {
+                                  if (value.isEmpty) {
+                                    return 'Inserisci una password per continuare';
+                                  }
+                                  return null;
+                                },
+                                obscureText: true,
+                              ),
+                              TextFormField(
+                                controller: _passwordChkController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Conferma password'),
+                                validator: (String value) {
+                                  if (value.isEmpty) {
+                                    return 'Inserisci una password per continuare';
+                                  }
+                                  return null;
+                                },
+                                obscureText: true,
+                              ),
+                              SizedBox(height: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  ElevatedButton.icon(
+                                    icon: Icon(
+                                      Icons.lock,
+                                      color: Colors.grey[400],
+                                    ),
+                                    label: Text(
+                                      "Cambia password",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.normal,
+                                        fontStyle: FontStyle.normal,
+                                        foreground: paint,
+                                      ),
+                                    ),
+                                    style: ButtonStyle(
+                                        backgroundColor:
+                                            MaterialStateProperty.all<Color>(
+                                                Colori.primario)),
+                                    onPressed: () async {
+                                      if (_formKey2.currentState.validate()) {
+                                        final User user = (await _auth
+                                                .signInWithEmailAndPassword(
+                                          email: _auth.currentUser.email,
+                                          password: _passwordOldController.text,
+                                        ))
+                                            .user;
+                                        if (user.emailVerified) {
+                                          if (_passwordNewController.text ==
+                                              _passwordChkController.text) {
+                                            if (_passwordOldController.text !=
+                                                _passwordNewController.text) {
+                                              await _auth.currentUser
+                                                  .updatePassword(
+                                                      _passwordNewController
+                                                          .text);
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      "Password aggiornata, rieffettuare l'accesso"),
+                                                ),
+                                              );
+                                              await _signOut();
+                                              await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          PaginaAutenticazione()));
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      "Le password devono corrispondere"),
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        } else {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(const SnackBar(
+                                            content: Text(
+                                                "La nuova password deve essere differente da quella precedente"),
+                                          ));
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )),
+                      Divider(
+                        thickness: 4,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 40),
                       ElevatedButton.icon(
                         icon: Icon(
                           Icons.delete_forever,
@@ -263,8 +367,8 @@ class AccountState extends State<Account> {
                                     actions: <Widget>[
                                       TextButton(
                                         onPressed: () =>
-                                            Navigator.pop(context, 'Cancel'),
-                                        child: const Text('Cancel'),
+                                            Navigator.pop(context, 'Annulla'),
+                                        child: const Text('Annulla'),
                                       ),
                                       TextButton(
                                         onPressed: () async {
@@ -289,6 +393,13 @@ class AccountState extends State<Account> {
                                               await _auth.signOut();
                                             });
                                             await _auth.currentUser.delete();
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                    "Account eliminato con successo"),
+                                              ),
+                                            );
                                           } catch (e) {
                                             print(e);
                                             ScaffoldMessenger.of(context)

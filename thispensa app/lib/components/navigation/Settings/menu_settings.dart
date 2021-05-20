@@ -1,8 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:thispensa/styles/colors.dart';
 //import 'user/screens/screens.dart';
 import 'button_settings/stgButton.dart';
+import 'package:http/http.dart' as http;
 
 //import 'style.dart';
+final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class SettingsPage extends StatefulWidget {
   SettingsPage({Key key}) : super(key: key);
@@ -44,6 +51,9 @@ class _SettingsPage extends State<SettingsPage> {
 //-----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
+    var paint = Paint();
+    paint.color = Colors.black;
+    paint.style = PaintingStyle.fill;
     return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -61,7 +71,43 @@ class _SettingsPage extends State<SettingsPage> {
             buildButton("Assistenza", Icons.help_outline, Help()),
             buildButton("Informazioni", Icons.info, Info()),
             buildButton("Tema", Icons.color_lens, Themes()),
+            SizedBox(height: 40),
+            ElevatedButton.icon(
+              icon: Icon(
+                Icons.save,
+                color: Colors.grey[400],
+              ),
+              label: Text(
+                "Esci",
+                style: TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontStyle: FontStyle.normal,
+                  foreground: paint,
+                ),
+              ),
+              style: ButtonStyle(
+                  backgroundColor:
+                      MaterialStateProperty.all<Color>(Colori.primario)),
+              onPressed: () async {
+                await _signOut();
+              },
+            ),
           ],
         )));
+  }
+
+  Future<void> _signOut() async {
+    var params = {
+      "uid": _auth.currentUser.uid.toString(),
+      "tokenJWT": await _auth.currentUser.getIdToken()
+    };
+    http.post(Uri.https('thispensa.herokuapp.com', '/logout'),
+        body: json.encode(params),
+        headers: {
+          "Accept": "application/json",
+          HttpHeaders.contentTypeHeader: "application/json"
+        }).then((response) async {
+      await _auth.signOut();
+    });
   }
 }

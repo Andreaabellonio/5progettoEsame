@@ -43,26 +43,30 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     Future.delayed(Duration.zero, () async {
       if (_auth.currentUser != null) if (_auth.currentUser.emailVerified) {
-        var params = {
-          "uid": _auth.currentUser.uid.toString(),
-          "tokenJWT": await _auth.currentUser.getIdToken()
-        };
-        http.post(Uri.https('thispensa.herokuapp.com', '/login'),
-            body: json.encode(params),
-            headers: {
-              "Accept": "application/json",
-              "withCredential": "true",
-              HttpHeaders.contentTypeHeader: "application/json"
-            }).then((response) async {
-          Map data = jsonDecode(response.body);
-          if (!data["errore"]) {
-            inviaTokenFCM();
-            Future.microtask(() => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (BuildContext context) => MyNavWidget())));
-          }
-        });
+        try {
+          var params = {
+            "uid": _auth.currentUser.uid.toString(),
+            "tokenJWT": await _auth.currentUser.getIdToken()
+          };
+          http.post(Uri.https('thispensa.herokuapp.com', '/login'),
+              body: json.encode(params),
+              headers: {
+                "Accept": "application/json",
+                "withCredential": "true",
+                HttpHeaders.contentTypeHeader: "application/json"
+              }).then((response) async {
+            Map data = jsonDecode(response.body);
+            if (!data["errore"]) {
+              inviaTokenFCM();
+              Future.microtask(() => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (BuildContext context) => MyNavWidget())));
+            }
+          });
+        } catch (ex) {
+          print(ex);
+        }
       }
     });
     super.initState();
@@ -337,10 +341,11 @@ class _registerPage extends State<RegisterPage> {
       if (data["errore"]) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: Colors.yellow,
+            backgroundColor: Colors.red,
             content: Text('Email già presente, inserire una mail differente!'),
           ),
         );
+        EasyLoading.dismiss();
       } else {
         final User user = (await _auth.createUserWithEmailAndPassword(
           email: _emailController.text,
@@ -387,6 +392,7 @@ class _registerPage extends State<RegisterPage> {
                 _nomeDispensaController.text = "";
               });
               EasyLoading.dismiss();
+              Navigator.pop(context);
             }
           });
         } else {
