@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "ng-number-picker": "^1.1.9"
+  }
+}
