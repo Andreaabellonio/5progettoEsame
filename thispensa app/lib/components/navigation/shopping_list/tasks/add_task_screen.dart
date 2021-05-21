@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../styles/colors.dart';
-import 'package:thispensa/components/productWidgets/barcode_scan2.dart';
+import 'package:Thispensa/components/productWidgets/barcode_scan2.dart';
 
 class AddTaskScreen extends StatefulWidget {
   @override

@@ -9,12 +9,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class HttpService {
-
-
   Future<List<Post>> getPosts(String idDispensa) async {
     String postsURL = "https://thispensa.herokuapp.com/leggiDispensa";
     var params = {
-      "idDispensa":idDispensa,
+      "idDispensa": idDispensa,
       "uid": _auth.currentUser.uid.toString(),
       "tokenJWT": await _auth.currentUser.getIdToken()
     };
@@ -59,8 +57,6 @@ class HttpService {
         qta: json['qta'] as int);
   }
 
-
-
   Future<List<Dispensa>> getDispense() async {
     String postsURL = "https://thispensa.herokuapp.com/leggiIdDispense";
     var params = {
@@ -84,19 +80,18 @@ class HttpService {
       //print(lista);
 
       List<Dispensa> dispense = new List<Dispensa>();
-
-      for (var i = 0; i < lista.length; i++) {
-        
-        dispense.add(Dispensa(
+      if (lista != null)
+        for (var i = 0; i < lista.length; i++) {
+          dispense.add(Dispensa(
             id: lista[i]["_id"] as String,
-            nome: lista[i]["nome"] as String,));
-      }
+            nome: lista[i]["nome"] as String,
+          ));
+        }
       return dispense;
     } else {
       throw "Unable to retrieve Dispense.";
     }
   }
-
 }
 
 Future<String> getProduct1(barcode) async {
@@ -110,7 +105,3 @@ Future<String> getProduct1(barcode) async {
   }
   return "error";
 }
-
-
-
-

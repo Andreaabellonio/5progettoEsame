@@ -41,7 +41,10 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
-    EasyLoading.dismiss();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      EasyLoading.dismiss();
+    });
+    super.initState();
   }
 
   Widget build(BuildContext context) {
@@ -90,14 +93,12 @@ class _registerPage extends State<RegisterPage> {
       TextEditingController();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cognomeController = TextEditingController();
-  final TextEditingController _nomeDispensaController = TextEditingController();
 
   bool _success;
   String _userEmail = '';
   String _err = "";
 
   Widget build(BuildContext context) {
-    _nomeDispensaController.text = "Prima dispensa";
     var paint = Paint();
     paint.color = Colors.black;
     paint.style = PaintingStyle.fill;
@@ -192,19 +193,7 @@ class _registerPage extends State<RegisterPage> {
                                 },
                                 obscureText: true,
                               ),
-                              SizedBox(height: 20),
-                              TextFormField(
-                                keyboardType: TextInputType.text,
-                                controller: _nomeDispensaController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Nome dispensa'),
-                                validator: (String value) {
-                                  if (value.isEmpty) {
-                                    return 'Inserisci un nome per continuare';
-                                  }
-                                  return null;
-                                },
-                              ),
+                              SizedBox(height: 20),                            
                               Container(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
@@ -313,7 +302,6 @@ class _registerPage extends State<RegisterPage> {
             "uid": user.uid.toString(),
             "nome": _nomeController.text,
             "cognome": _cognomeController.text,
-            "nomeDispensa": _nomeDispensaController.text,
           };
           http.post(Uri.https('thispensa.herokuapp.com', '/registrazione'),
               body: json.encode(params),
@@ -345,7 +333,6 @@ class _registerPage extends State<RegisterPage> {
                 _confermaPasswordController.text = "";
                 _nomeController.text = "";
                 _cognomeController.text = "";
-                _nomeDispensaController.text = "";
               });
               EasyLoading.dismiss();
               Navigator.pop(context);
@@ -457,7 +444,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                             backgroundColor: MaterialStateProperty.all<Color>(
                                 Colori.primarioScuro)),
                         onPressed: () {
-                          Navigator.pushReplacement(
+                          Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (BuildContext context) =>
