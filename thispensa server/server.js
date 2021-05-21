@@ -76,7 +76,7 @@ app.post("/login", function (req, res) {
                 mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, async function (data) {
                     if (data.length == 1) {
                         req.session.auth = true;
-                        res.send(JSON.stringify({ errore: false, listaDellaSpesa: data[0].listeDellaSpesa, dispensa: data[0].dispense }));
+                        res.send(JSON.stringify({ errore: false }));
                     } else
                         res.send(JSON.stringify({ errore: true }));
                 });
@@ -108,12 +108,9 @@ app.post("/registrazione", function (req, res) {
             email: userRecord.email,
         };
         mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { nome: req.body.nomeLista, elementi: [], creatore: req.body.uid }, function (listaDellaSpesa) {
-            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
-                dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
-                dato.dispense = [dispense.insertedId];
-                mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
-                    res.send(JSON.stringify({ errore: false }));
-                });
+            dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
+            mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
+                res.send(JSON.stringify({ errore: false }));
             });
         });
     })
@@ -140,14 +137,11 @@ app.post("/collegamentoAccountGoogle", function (req, res) {
                         req.session.auth = true;
                         res.send(JSON.stringify({ errore: false, listaDellaSpesa: utente.listeDellaSpesa, dispensa: utente.dispense }));
                     } else {
-                        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { nome: req.body.nomeLista, elementi: [], creatore: req.body.uid }, function (listaDellaSpesa) {
-                            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
-                                dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
-                                dato.dispense = [dispense.insertedId];
-                                mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
-                                    req.session.auth = true;
-                                    res.send(JSON.stringify({ errore: false, listaDellaSpesa: dato.listeDellaSpesa, dispensa: dato.dispense }));
-                                });
+                        mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { elementi: [], creatore: req.body.uid }, function (listaDellaSpesa) {
+                            dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
+                            mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
+                                req.session.auth = true;
+                                res.send(JSON.stringify({ errore: false }));
                             });
                         });
                     }
@@ -220,6 +214,14 @@ app.post("/ricercaProdottoBarcode", function (req, res, next) {
     });
 });
 */
+
+app.post("/creaDispensa", function (req, res) {
+    mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
+        mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });
+});
 
 app.post("/aggiungiDispensa", function (req, res) {
     mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
