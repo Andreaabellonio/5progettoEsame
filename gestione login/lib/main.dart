@@ -42,24 +42,26 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
-    FirebaseAuth.instance.authStateChanges().map((User user) {
-      if (user == null) {
-        print('User is currently signed out!');
-      } else {
-        var params = {"uid": user.uid.toString()};
-        http.post(Uri.http('192.168.137.1:23377', '/login'),
+    if (_auth.currentUser == null) {
+      print('User is currently signed out!');
+    } else {
+      if (_auth.currentUser.emailVerified) {
+        var params = {"uid": _auth.currentUser.uid.toString()};
+        http.post(Uri.http('192.168.1.53:23377', '/login'),
             body: json.encode(params),
             headers: {
               "Accept": "application/json",
               HttpHeaders.contentTypeHeader: "application/json"
             }).then((response) async {
-          Future.microtask(() => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (BuildContext context) => userPage())));
+          Map data = jsonDecode(response.body);
+          if (!data["errore"])
+            Future.microtask(() => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (BuildContext context) => userPage())));
         });
       }
-    });
+    }
     super.initState();
   }
 
@@ -193,7 +195,7 @@ class _registerPage extends State<registerPage> {
         "nome": "prendere da textbox",
         "cognome": "prendere da textbox"
       };
-      http.post(Uri.http('192.168.137.1:23377', '/registrazione'),
+      http.post(Uri.http('192.168.1.53:23377', '/registrazione'),
           body: json.encode(params),
           headers: {
             "Accept": "application/json",
@@ -206,18 +208,19 @@ class _registerPage extends State<registerPage> {
         } //se genera un'errore il server elimino l'account da firebase
         else {
           if (!user.emailVerified) {
-            await user.sendEmailVerification();
+            await user.sendEmailVerification().then((value) => _auth.signOut());
           }
           setState(() {
             _success = true;
             _userEmail = "Controlla la tua mail per confermare l'account";
+            _emailController.text = "";
+            _passwordController.text = "";
           });
         }
       });
     } else {
       _success = false;
     }
-    _auth.signOut();
   }
 
   @override
@@ -274,14 +277,16 @@ class _loginPage extends State<loginPage> {
 
       final user = userCredential.user;
       var params = {"uid": user.uid.toString()};
-      http.post(Uri.http('192.168.137.1:23377', '/collegamentoAccountGoogle'),
+      http.post(Uri.http('192.168.1.53:23377', '/collegamentoAccountGoogle'),
           body: json.encode(params),
           headers: {
             "Accept": "application/json",
             HttpHeaders.contentTypeHeader: "application/json"
           }).then((response) async {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => userPage()));
+        Map data = jsonDecode(response.body);
+        if (!data["errore"])
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => userPage()));
       });
 
       /*
@@ -384,7 +389,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
       if (user.emailVerified) {
         var params = {"uid": user.uid.toString()};
         print(params);
-        http.post(Uri.http('192.168.137.1:23377', '/login'),
+        http.post(Uri.http('192.168.1.53:23377', '/login'),
             body: json.encode(params),
             headers: {
               "Accept": "application/json",
@@ -396,6 +401,10 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                 context,
                 MaterialPageRoute(
                     builder: (BuildContext context) => userPage()));
+          else
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Errore nel server durante il login"),
+            ));
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -481,6 +490,7 @@ class _userPage extends State<userPage> {
             child: Text("Elimina account"),
             onPressed: () async {
               try {
+                //! GESTIONE ELIMINAZIONE ACCOUNT DA MONGO
                 await _auth.currentUser.delete();
               } catch (e) {
                 print(e);
@@ -502,15 +512,11 @@ class _userPage extends State<userPage> {
   }
 
   Future<void> _signOut() async {
-    http.post(Uri.http('192.168.137.1:23377', '/login'), headers: {
+    http.post(Uri.http('192.168.1.53:23377', '/logout'), headers: {
       "Accept": "application/json",
       HttpHeaders.contentTypeHeader: "application/json"
     }).then((response) async {
-      Map data = jsonDecode(response.body);
-      if (!data["errore"])
-        Navigator.push(context,
-            MaterialPageRoute(builder: (BuildContext context) => userPage()));
+      await _auth.signOut();
     });
-    await _auth.signOut();
   }
 }
