@@ -1,8 +1,5 @@
-import 'package:Thispensa/components/navigation/navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../../styles/colors.dart';
-import 'tasks/add_task_screen.dart';
 
 class MyListWidget extends StatefulWidget {
   @override

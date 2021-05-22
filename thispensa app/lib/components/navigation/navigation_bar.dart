@@ -23,14 +23,11 @@ class PaginaVera extends StatelessWidget {
 class MyNavWidget extends StatefulWidget {
   MyNavWidget({Key key}) : super(key: key);
 
-  //MyNavWidget({Key key}) : super(key: key);
-
   @override
   _MyNavWidgetState createState() => _MyNavWidgetState();
 }
 
 class _MyNavWidgetState extends State<MyNavWidget> {
-  MyDispensa obj;
   int _selectedIndex = 0;
 
   @override
@@ -42,29 +39,42 @@ class _MyNavWidgetState extends State<MyNavWidget> {
   }
 
   static List<Widget> _widgetOptions = <Widget>[
-    /*Container(
-      child: UserPage(),
-      ),*/
-
     Container(
-      //child: MyDispensa(),
-      //child: this.idDispensa != null ? obj.idDispensa : null,
       child: MyDispensa(),
     ),
     Container(
       child: MyListWidget(),
     ),
-    /*Container(
-      child: MyListWidget(),
-    ),*/
     Container(
       child: SettingsPage(),
     ),
   ];
 
-  void _onItemTapped(int index) {
+  PageController pageController = PageController(
+    initialPage: 0,
+    keepPage: true,
+  );
+
+  Widget buildPageView() {
+    return PageView(
+        controller: pageController,
+        onPageChanged: (index) {
+          pageChanged(index);
+        },
+        children: _widgetOptions);
+  }
+
+  void pageChanged(int index) {
     setState(() {
       _selectedIndex = index;
+    });
+  }
+
+  void bottomTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      pageController.animateToPage(index,
+          duration: Duration(milliseconds: 500), curve: Curves.ease);
     });
   }
 
@@ -72,19 +82,9 @@ class _MyNavWidgetState extends State<MyNavWidget> {
     return GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Scaffold(
-          /*appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text('Thispensa'),
-          ),*/
-          body: Center(
-            child: _widgetOptions.elementAt(_selectedIndex),
-          ),
+          body: buildPageView(),
           bottomNavigationBar: BottomNavigationBar(
             items: const <BottomNavigationBarItem>[
-              /*BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Utente',
-          ),*/
               BottomNavigationBarItem(
                 icon: Icon(Icons.food_bank),
                 label: 'Dispensa',
@@ -101,7 +101,9 @@ class _MyNavWidgetState extends State<MyNavWidget> {
             currentIndex: _selectedIndex,
             unselectedItemColor: Colors.grey,
             selectedItemColor: Colors.black,
-            onTap: _onItemTapped,
+            onTap: (index) {
+              bottomTapped(index);
+            },
           ),
         ));
   }

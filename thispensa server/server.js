@@ -218,7 +218,7 @@ app.post("/ricercaProdottoBarcode", function (req, res, next) {
 app.post("/creaDispensa", function (req, res) {
     mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
         mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false, idDispensa: data.insertedId, nome: req.body.nomeDispensa }));
+            res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
         });
     });
 });

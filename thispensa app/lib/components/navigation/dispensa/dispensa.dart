@@ -32,12 +32,12 @@ class _MyDispensaState extends State<MyDispensa> {
   List<Widget> oggetti2 = [];
   PopUpClass pop = new PopUpClass();
   RefreshController _refreshController =
-      RefreshController(initialRefresh: false);
+      RefreshController(initialRefresh: true);
 
   void _onRefresh() async {
     pop.first = false;
     setState(() {
-      oggetti2 = []; //CHI TOCCA MUORE:senza questa schifezza non va nulla
+      oggetti2 = []; //CHI TOCCA MUORE: senza questa schifezza non va nulla
     });
     await caricaDispense();
     if (mounted) {
@@ -60,7 +60,7 @@ class _MyDispensaState extends State<MyDispensa> {
     EasyLoading.instance.userInteractions = false;
     EasyLoading.show();
     pop.callback = caricaDispense;
-    caricaDispense();
+    //caricaDispense();
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       EasyLoading.dismiss();
@@ -95,6 +95,10 @@ class _MyDispensaState extends State<MyDispensa> {
             leading: Icon(Icons.text_snippet),
             title: Text(dispensa.nome),
             onTap: () async {
+              EasyLoading.instance.indicatorType =
+                  EasyLoadingIndicatorType.foldingCube;
+              EasyLoading.instance.userInteractions = false;
+              EasyLoading.show();
               prefs.setString("idDispensa", dispensa.id);
               prefs.setString("nomeDispensa", dispensa.nome);
               List<Post> cose = await httpService.getPosts(dispensa.id);
@@ -107,13 +111,14 @@ class _MyDispensaState extends State<MyDispensa> {
                       .toList();
                 });
               } else {
-                oggetti2 = [Text("Nessun elemento presente")];
+                oggetti2 = [Text("Nessun prodotto presente")];
               }
               setState(() {
                 nomeDispensa = dispensa.nome;
                 idDispensa = dispensa.id;
               });
               Navigator.pop(context);
+              EasyLoading.dismiss();
             }))
         .toList();
     var app = new ListView.builder(
@@ -191,7 +196,7 @@ class _MyDispensaState extends State<MyDispensa> {
         ),
         body: SmartRefresher(
           enablePullDown: true,
-          header: WaterDropHeader(),
+          header: MaterialClassicHeader(color: Colori.primario),
           footer: CustomFooter(
             builder: (BuildContext context, LoadStatus mode) {
               Widget body;
@@ -228,7 +233,6 @@ class _MyDispensaState extends State<MyDispensa> {
   Widget _itemBuilder(Post post) {
     return Container(
       child: Stack(
-        //alignment: AlignmentDirectional.bottomEnd,
         children: [
           TileOverlay(post),
         ],
@@ -248,11 +252,7 @@ class TileOverlay extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          child: Container(
-              //padding: EdgeInsets.symmetric(vertical: 5.0),
-              /*decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5)), //opacità tra 0 e 1*/
-              child: PostTile(post: post)),
+          child: Container(child: PostTile(post: post)),
         )
       ],
     );
@@ -286,12 +286,10 @@ class _PostTileState extends State<PostTile> {
       margin: const EdgeInsets.only(left: 12.0),
       child: Text(
         post.name.toUpperCase(),
-        //style: Theme.of(context).textTheme.bodyText1,
         style: TextStyle(
           fontSize: 14,
         ),
         overflow: TextOverflow.fade,
-        //textAlign: TextAlign.justify,
       ),
     );
 
@@ -323,19 +321,14 @@ class _PostTileState extends State<PostTile> {
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
         };
-        print(params);
-
         http.Response res = await http.post(Uri.parse(postsURL),
             body: json.encode(params),
             headers: {
               "Accept": "application/json",
               HttpHeaders.contentTypeHeader: "application/json"
             });
-
-        //Response res = await get(postsURL);
         if (res.statusCode == 200) {
           dynamic body = jsonDecode(res.body);
-
           List<dynamic> lista = body["prodotti"];
           print(lista);
         } else {
@@ -353,32 +346,25 @@ class _PostTileState extends State<PostTile> {
           decoration: BoxDecoration(
             color: Colori.primarioTenue,
             borderRadius: BorderRadius.circular(10),
-            //border: Border.all(color: Colors.black26),
           ),
-          child: Column(
-              //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    //SizedBox(height: 16)
-
-                    nameItem,
-
-                    Container(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        //mainAxisAlignment: MainAxisAlignment.value(),
-                        children: [
-                          numberPicker,
-                          trash,
-                        ],
-                      ),
-                    ),
-                  ],
+                nameItem,
+                Container(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      numberPicker,
+                      trash,
+                    ],
+                  ),
                 ),
-              ]),
+              ],
+            ),
+          ]),
         ),
         //Divider(color: Colors.grey, height: 32),
       ],

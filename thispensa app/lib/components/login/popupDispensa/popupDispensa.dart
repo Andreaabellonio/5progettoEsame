@@ -45,7 +45,8 @@ class PopUpClass {
                           420 // adjust values according to your need
                       : MediaQuery.of(context).size.height -
                           MediaQuery.of(context).size.height +
-                          30), //? 01:26 22/05/2021*/
+                          30), //? 01:26 22/05/2021
+                          */
               child: Center(
                 child: new AlertDialog(
                   titlePadding: EdgeInsets.symmetric(vertical: 40.0),
@@ -135,7 +136,7 @@ class PopUpClass {
                                         prefs.setString(
                                             "idDispensa", data["idDispensa"]);
                                         prefs.setString(
-                                            "idDispensa", data["nome"]);
+                                            "nome", data["nome"]);
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           const SnackBar(
@@ -187,9 +188,6 @@ class PopUpClass {
                                   ),
                                 )
                               : SizedBox.shrink(),
-                          /*SizedBox(
-                            height: MediaQuery.of(context).viewInsets.bottom,
-                          ),*/
                         ],
                       ),
                     ),
