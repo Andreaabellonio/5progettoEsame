@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -13,35 +14,38 @@ final FirebaseAuth _auth = FirebaseAuth.instance;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  if (_auth.currentUser != null && _auth.currentUser.emailVerified) {
-    try {
-      var params = {
-        "uid": _auth.currentUser.uid.toString(),
-        "tokenJWT": await _auth.currentUser.getIdToken()
-      };
-      http.post(Uri.https('thispensa.herokuapp.com', '/login'),
-          body: json.encode(params),
-          headers: {
-            "Accept": "application/json",
-            "withCredential": "true",
-            HttpHeaders.contentTypeHeader: "application/json"
-          }).then((response) async {
-        Map data = jsonDecode(response.body);
-        if (!data["errore"]) {
-          inviaTokenFCM();
-          runApp(PaginaVera());
-        } else {
-          runApp(PaginaAutenticazione());
-        }
-      });
-    } catch (ex) {
-      print(ex);
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((value) async {
+    await Firebase.initializeApp();
+    if (_auth.currentUser != null && _auth.currentUser.emailVerified) {
+      try {
+        var params = {
+          "uid": _auth.currentUser.uid.toString(),
+          "tokenJWT": await _auth.currentUser.getIdToken()
+        };
+        http.post(Uri.https('thispensa.herokuapp.com', '/login'),
+            body: json.encode(params),
+            headers: {
+              "Accept": "application/json",
+              "withCredential": "true",
+              HttpHeaders.contentTypeHeader: "application/json"
+            }).then((response) async {
+          Map data = jsonDecode(response.body);
+          if (!data["errore"]) {
+            inviaTokenFCM();
+            runApp(PaginaVera());
+          } else {
+            runApp(PaginaAutenticazione());
+          }
+        });
+      } catch (ex) {
+        print(ex);
+        runApp(PaginaAutenticazione());
+      }
+    } else {
       runApp(PaginaAutenticazione());
     }
-  } else {
-    runApp(PaginaAutenticazione());
-  }
+  });
 }
 
 Future<void> inviaTokenFCM() async {

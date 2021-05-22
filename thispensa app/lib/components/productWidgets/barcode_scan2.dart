@@ -36,9 +36,9 @@ class _BarcodeState extends State<Barcode> {
       if (result.status == 1) {
         String nome =
             await traduci(result.product.productName, result.product.lang);
-        String urlImg = result.product.imgSmallUrl == null
+        String urlImg = result.product.imageFrontSmallUrl == null
             ? "Non disponibile per questo prodotto"
-            : result.product.imgSmallUrl;
+            : result.product.imageFrontSmallUrl;
         String calorie;
         try {
           calorie = result.product.nutriments.energyKcal.toString() == null
@@ -57,7 +57,7 @@ class _BarcodeState extends State<Barcode> {
         List<String> tracce = result.product.allergens.ids == null
             ? "Non disponibile per questo prodotto"
             : result.product.allergens.ids;
-        List<String> tracceTradotte = new List<String>();
+        List<String> tracceTradotte = [];
         if (tracce.length > 0) {
           for (String allergen in tracce) {
             tracceTradotte.add(await traduci(
@@ -114,7 +114,6 @@ class _BarcodeState extends State<Barcode> {
   Future<void> ScansionaBarCode() async {
     //? Funzione richiamata sul clic del pulsante
     String barcodeScanRes;
-    RegExp exp = RegExp(r"(^[0-9]*$)"); //? regex per il controllo del barcode
     try {
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
           "#ff6666", "Esci", true, ScanMode.BARCODE);

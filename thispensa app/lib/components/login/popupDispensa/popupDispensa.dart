@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:Thispensa/styles/colors.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
-class Prova {
+class PopUpClass {
   Function callback;
   bool first = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -19,10 +21,14 @@ class Prova {
     decoration: TextDecoration.underline,
   );
   FocusNode yourFocus = FocusNode();
+
   Widget popupDispensa(BuildContext context) {
     var paint = Paint();
     paint.color = Colors.black;
     paint.style = PaintingStyle.fill;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      EasyLoading.dismiss();
+    });
     return WillPopScope(
       onWillPop: () async => !first,
       child: Padding(
@@ -45,7 +51,7 @@ class Prova {
                   titlePadding: EdgeInsets.symmetric(vertical: 40.0),
                   title: Text(
                     (first)
-                        ? 'Inserisci la Tua Prima Thispensa'
+                        ? 'Inserisci la tua prima Thispensa!'
                         : 'Inserisci una nuova Thispensa',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -122,6 +128,14 @@ class Prova {
                                       _dispensaController.text = "";
                                       Map data = jsonDecode(response.body);
                                       if (!data["errore"]) {
+                                        Future<SharedPreferences> _prefs =
+                                            SharedPreferences.getInstance();
+                                        final SharedPreferences prefs =
+                                            await _prefs;
+                                        prefs.setString(
+                                            "idDispensa", data["idDispensa"]);
+                                        prefs.setString(
+                                            "idDispensa", data["nome"]);
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           const SnackBar(

@@ -1,12 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:Thispensa/components/login/popupDispensa/popupDispensa.dart';
+import 'package:Thispensa/components/navigation/shopping_list/tasks/add_task_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart' as http;
 import 'package:Thispensa/models/dispensa_model.dart';
 import 'package:Thispensa/models/post_model.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../styles/colors.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'chiamateServer/http_service.dart';
@@ -20,56 +25,96 @@ class MyDispensa extends StatefulWidget {
 
 class _MyDispensaState extends State<MyDispensa> {
   final HttpService httpService = HttpService();
-  List<Widget> oggetti;
   String idDispensa;
   String nomeDispensa =
       ""; //carico dinamicamente il nome della dispensa selezionata
-  ListView elementiDispensa;
-  Prova app = new Prova();
+  ListView elencoDispense;
+  List<Widget> oggetti2 = [];
+  PopUpClass pop = new PopUpClass();
+  RefreshController _refreshController =
+      RefreshController(initialRefresh: false);
+
+  void _onRefresh() async {
+    pop.first = false;
+    setState(() {
+      oggetti2 = []; //CHI TOCCA MUORE:senza questa schifezza non va nulla
+    });
+    await caricaDispense();
+    if (mounted) {
+      setState(() {
+        _refreshController.refreshCompleted();
+      });
+    }
+  }
+
+  void _onLoading() async {
+    if (mounted) {
+      await caricaDispense();
+      _refreshController.loadComplete();
+    }
+  }
 
   @override
   void initState() {
-    app.callback = caricaDispense;
-    Future.delayed(Duration.zero, () async {
-      List<Dispensa> posts = await httpService.getDispense();
-      if (posts.length == 0) {
-        app.first = true;
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return app.popupDispensa(context);
-            });
-        app.first = false;
-      } else {
-        app.first = false;
-        await caricaDispense();
-      }
-    });
+    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
+    EasyLoading.instance.userInteractions = false;
+    EasyLoading.show();
+    pop.callback = caricaDispense;
+    caricaDispense();
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
       EasyLoading.dismiss();
     });
   }
 
   void caricaDispense() async {
-    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
-    EasyLoading.instance.userInteractions = false;
-    EasyLoading.show();
-    List<Dispensa> posts = await httpService.getDispense();
-    idDispensa = posts[0].id;
-    nomeDispensa = posts[0].nome;
-    List<Widget> oggetti = posts
+    List<Dispensa> dispense = await httpService.getDispense();
+    if (dispense.length == 0) {
+      pop.first = true;
+      await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return pop.popupDispensa(context);
+          });
+      _onRefresh(); //ricarico gli elementi dopo che ha inserito una nuova dispensa
+      pop.first = false;
+    } else {
+      pop.first = false;
+    }
+    Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+    final SharedPreferences prefs = await _prefs;
+    nomeDispensa = prefs.getString("nomeDispensa");
+    idDispensa = prefs.getString("idDispensa");
+    if (nomeDispensa == null || idDispensa == null) {
+      nomeDispensa = dispense[0].nome;
+      idDispensa = dispense[0].id;
+    }
+
+    List<Widget> oggetti = dispense
         .map((Dispensa dispensa) => ListTile(
-              leading: Icon(Icons.text_snippet),
-              title: Text(dispensa.nome),
-              onTap: () {
+            leading: Icon(Icons.text_snippet),
+            title: Text(dispensa.nome),
+            onTap: () async {
+              prefs.setString("idDispensa", dispensa.id);
+              prefs.setString("nomeDispensa", dispensa.nome);
+              List<Post> cose = await httpService.getPosts(dispensa.id);
+              if (cose.length > 0) {
                 setState(() {
-                  idDispensa = dispensa.id;
-                  nomeDispensa = dispensa.nome;
+                  oggetti2 = cose
+                      .map(
+                        (Post post) => _itemBuilder(post),
+                      )
+                      .toList();
                 });
-                Navigator.pop(context);
-              },
-            ))
+              } else {
+                oggetti2 = [Text("Nessun elemento presente")];
+              }
+              setState(() {
+                nomeDispensa = dispensa.nome;
+                idDispensa = dispensa.id;
+              });
+              Navigator.pop(context);
+            }))
         .toList();
     var app = new ListView.builder(
       scrollDirection: Axis.vertical,
@@ -79,10 +124,23 @@ class _MyDispensaState extends State<MyDispensa> {
         return oggetti[index];
       },
     );
+
+    List<Post> cose = await httpService.getPosts(idDispensa);
+    if (cose.length > 0) {
+      setState(() {
+        oggetti2 = cose
+            .map(
+              (Post post) => _itemBuilder(post),
+            )
+            .toList();
+      });
+    } else {
+      oggetti2 = [Text("Nessun elemento presente")];
+    }
     setState(() {
-      elementiDispensa = app;
+      idDispensa = dispense[0].id;
+      elencoDispense = app;
     });
-    EasyLoading.dismiss();
   }
 
   @override
@@ -90,6 +148,12 @@ class _MyDispensaState extends State<MyDispensa> {
     return Scaffold(
         appBar: AppBar(
           title: Text(nomeDispensa),
+        ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colori.primario,
+          child: Icon(Icons.add),
+          onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (context) => AddTaskScreen())),
         ),
         drawer: Drawer(
           child: Column(
@@ -107,67 +171,58 @@ class _MyDispensaState extends State<MyDispensa> {
                       fontWeight: FontWeight.bold),
                 ),
               ),
-              (elementiDispensa != null) ? elementiDispensa : Text("vuoto")
+              (elencoDispense != null)
+                  ? elencoDispense
+                  : Center(child: CircularProgressIndicator()),
+              SizedBox(height: 15),
+              FloatingActionButton(
+                  backgroundColor: Colori.primario,
+                  child: Icon(Icons.add),
+                  onPressed: () async {
+                    pop.callback = caricaDispense;
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return pop.popupDispensa(context);
+                        });
+                  }),
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-            backgroundColor: Colori.primario,
-            child: Icon(Icons.add),
-            onPressed: () async {
-              app.callback = caricaDispense;
-              showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return app.popupDispensa(context);
-                  });
-            }),
-        body: Container(
-            child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('my Items',
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 40.0,
-                      fontWeight: FontWeight.bold)),
-              SizedBox(height: 10.0),
-              Text('just food',
-                  style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.w600)),
-              SizedBox(height: 10.0),
-              idDispensa != null
-                  ? FutureBuilder(
-                      future: httpService.getPosts(idDispensa),
-                      builder: (BuildContext context,
-                          AsyncSnapshot<List<Post>> snapshot) {
-                        if (!snapshot.hasData) {
-                          return Center(child: CircularProgressIndicator());
-                        } else {
-                          List<Post> posts = snapshot.data;
-                          List<Widget> oggetti = posts
-                              .map(
-                                (Post post) => _itemBuilder(post),
-                              )
-                              .toList();
-                          return new ListView.builder(
-                            scrollDirection: Axis.vertical,
-                            shrinkWrap: true,
-                            itemCount: oggetti.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              return oggetti[index];
-                            },
-                          );
-                        }
-                      })
-                  : Text('Seleziona dispensa'),
-            ],
+        body: SmartRefresher(
+          enablePullDown: true,
+          header: WaterDropHeader(),
+          footer: CustomFooter(
+            builder: (BuildContext context, LoadStatus mode) {
+              Widget body;
+              if (mode == LoadStatus.idle) {
+                body = Text("pull up load");
+              } else if (mode == LoadStatus.loading) {
+                body = CupertinoActivityIndicator();
+              } else if (mode == LoadStatus.failed) {
+                body = Text("Load Failed!Click retry!");
+              } else if (mode == LoadStatus.canLoading) {
+                body = Text("release to load more");
+              } else {
+                body = Text("No more Data");
+              }
+              return Container(
+                height: 55.0,
+                child: Center(child: body),
+              );
+            },
           ),
-        )));
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoading: _onLoading,
+          child: new ListView.builder(
+            itemCount: oggetti2.length,
+            itemBuilder: (BuildContext context, int index) {
+              print(oggetti2[index]);
+              return oggetti2[index];
+            },
+          ),
+        ));
   }
 
   Widget _itemBuilder(Post post) {

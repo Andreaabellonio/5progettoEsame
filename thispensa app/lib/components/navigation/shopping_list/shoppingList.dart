@@ -1,3 +1,4 @@
+import 'package:Thispensa/components/navigation/navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../styles/colors.dart';
@@ -9,7 +10,7 @@ class MyListWidget extends StatefulWidget {
 }
 
 class _MyListWidgetState extends State<MyListWidget> {
-Widget _buildTask(int index) {
+  Widget _buildTask(int index) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 25.0),
       child: Column(
@@ -34,15 +35,9 @@ Widget _buildTask(int index) {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    appBar: AppBar(
-              automaticallyImplyLeading: false,
-              title: const Text('My Shop'),
-            ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colori.primario,
-        child: Icon(Icons.add),
-        onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (context) => AddTaskScreen())),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('My Shop'),
       ),
       body: ListView.builder(
           padding: EdgeInsets.symmetric(vertical: 20.0),

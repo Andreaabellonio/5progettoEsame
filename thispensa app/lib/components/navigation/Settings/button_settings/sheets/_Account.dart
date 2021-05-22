@@ -418,6 +418,7 @@ class AccountState extends State<Account> {
                                               .userInteractions = false;
                                           EasyLoading.show();
                                           try {
+                                            await _auth.currentUser.delete();
                                             var params = {
                                               "uid": _auth.currentUser.uid
                                                   .toString(),
@@ -435,19 +436,27 @@ class AccountState extends State<Account> {
                                                   HttpHeaders.contentTypeHeader:
                                                       "application/json"
                                                 }).then((response) async {
-                                              await _auth.currentUser.delete();
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(
                                                 const SnackBar(
                                                   content: Text(
                                                       "Account eliminato con successo"),
                                                 ),
-                                              );                                              
+                                              );
                                               await Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
                                                           MyHomePage()));
+                                              EasyLoading.dismiss();
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  backgroundColor: Colors.red,
+                                                  content: Text(
+                                                      "Errore durante l'eliminazione"),
+                                                ),
+                                              );
                                             });
                                           } catch (e) {
                                             print(e);

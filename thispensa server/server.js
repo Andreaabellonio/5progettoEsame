@@ -218,15 +218,7 @@ app.post("/ricercaProdottoBarcode", function (req, res, next) {
 app.post("/creaDispensa", function (req, res) {
     mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
         mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false }));
-        });
-    });
-});
-
-app.post("/aggiungiDispensa", function (req, res) {
-    mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
-        mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false }));
+            res.send(JSON.stringify({ errore: false, idDispensa: data.insertedId, nome: req.body.nomeDispensa }));
         });
     });
 });
@@ -305,7 +297,6 @@ app.post("/aggiornaProdottoDispensa", function (req, res) {
 //?DATI INPUT
 //idDispensa
 app.post("/leggiDispensa", function (req, res) {
-    console.log(req.body);
     if (req.body.idDispensa != "default") {
         mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { elementi: 1 }, function (data) {
             res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
@@ -313,9 +304,7 @@ app.post("/leggiDispensa", function (req, res) {
     }
     else {
         mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-            console.log(data);
             mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
-                console.log(data);
                 res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
             });
         });

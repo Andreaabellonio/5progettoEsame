@@ -7,6 +7,8 @@ import 'package:Thispensa/components/productWidgets/flutterMobileVision.dart';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class PaginaAggiuntaProdotto extends StatefulWidget {
@@ -115,13 +117,17 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                 String data = controllerData.text;
                 int quantita = int.parse(controllerQuantita.text);
                 print(data + " " + quantita.toString());
+                Future<SharedPreferences> _prefs =
+                    SharedPreferences.getInstance();
+                final SharedPreferences prefs = await _prefs;
+                String idDispensa = prefs.getString("idDispensa");
                 var url =
                     "https://thispensa.herokuapp.com/inserisciProdottoDispensa";
                 var params = {
                   "uid": _auth.currentUser.uid.toString(),
                   "tokenJWT": await _auth.currentUser.getIdToken(),
                   "nome": nomeProdotto,
-                  "idDispensa": "60a57412a3423c6713fd76a4",
+                  "idDispensa": idDispensa,
                   "qta": quantita,
                   "dataScadenza": data,
                   "barcode": barcode

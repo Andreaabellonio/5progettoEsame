@@ -10,7 +10,6 @@ class MobileVision extends StatefulWidget {
 }
 
 class _MobileVisionState extends State<MobileVision> {
-  String _textsOcr;
 
   Future<Null> _read() async {
     print("sciao beo");

@@ -30,7 +30,7 @@ class HttpService {
 
       List<dynamic> lista = body["prodotti"];
       print(lista);
-      List<Post> posts = new List<Post>();
+      List<Post> posts = [];
 
       for (var i = 0; i < lista.length; i++) {
         String nome = await getProduct1(lista[i]["idProdotto"]);
@@ -79,7 +79,7 @@ class HttpService {
       List<dynamic> lista = body["dati"];
       //print(lista);
 
-      List<Dispensa> dispense = new List<Dispensa>();
+      List<Dispensa> dispense = [];
       if (lista != null)
         for (var i = 0; i < lista.length; i++) {
           dispense.add(Dispensa(
