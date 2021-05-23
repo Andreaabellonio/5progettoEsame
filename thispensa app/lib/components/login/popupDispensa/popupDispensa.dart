@@ -35,6 +35,8 @@ class PopUpClass {
         padding:
             EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
+          width:100,
+          height: 100,
           color: Theme.of(context).scaffoldBackgroundColor,
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
@@ -47,8 +49,8 @@ class PopUpClass {
                           MediaQuery.of(context).size.height +
                           30), //? 01:26 22/05/2021
                           */
-              child: Center(
-                child: new AlertDialog(
+              child:Center(
+                child:new AlertDialog(
                   titlePadding: EdgeInsets.symmetric(vertical: 40.0),
                   title: Text(
                     (first)
@@ -79,11 +81,16 @@ class PopUpClass {
                       key: _formKey, //?
                       child: Column(
                         children: [
-                          TextFormField(
+                          Container(
+                            width:MediaQuery.of(context).size.width,
+                            
+                            child:
+                         TextFormField(
                             focusNode: yourFocus,
                             keyboardType: TextInputType.name,
                             controller: _dispensaController,
                             decoration: InputDecoration(
+                            
                                 labelText: (first)
                                     ? 'Inserisci la tua prima dispensa!'
                                     : 'Inserisci una nuova dispensa!'),
@@ -92,14 +99,16 @@ class PopUpClass {
                                 return 'Inserire un nome per continuare <es. \'Dispensa Casa\' >';
                               return null;
                             },
-                          ),
+                          ),),
+
+                        
                           SizedBox(height: 20),
                           Material(
                               elevation: 5.0,
                               borderRadius: BorderRadius.circular(30.0),
                               color: Color.fromARGB(255, 249, 193, 108),
                               child: MaterialButton(
-                                minWidth: MediaQuery.of(context).size.width,
+                                minWidth: 30,
                                 padding:
                                     EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 10.0),
                                 onPressed: () async {
@@ -193,7 +202,8 @@ class PopUpClass {
                     ),
                   ],
                 ),
-              ),
+              
+            ),
             ),
           ),
         ),
