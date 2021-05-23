@@ -80,72 +80,73 @@ class _MyDispensaState extends State<MyDispensa> {
       pop.first = false;
     } else {
       pop.first = false;
-    }
-    Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-    final SharedPreferences prefs = await _prefs;
-    nomeDispensa = prefs.getString("nomeDispensa");
-    idDispensa = prefs.getString("idDispensa");
-    if (nomeDispensa == null || idDispensa == null) {
-      nomeDispensa = dispense[0].nome;
-      idDispensa = dispense[0].id;
-    }
 
-    List<Widget> oggetti = dispense
-        .map((Dispensa dispensa) => ListTile(
-            leading: Icon(Icons.text_snippet),
-            title: Text(dispensa.nome),
-            onTap: () async {
-              EasyLoading.instance.indicatorType =
-                  EasyLoadingIndicatorType.foldingCube;
-              EasyLoading.instance.userInteractions = false;
-              EasyLoading.show();
-              prefs.setString("idDispensa", dispensa.id);
-              prefs.setString("nomeDispensa", dispensa.nome);
-              List<Post> cose = await httpService.getPosts(dispensa.id);
-              if (cose.length > 0) {
+      Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _prefs;
+      nomeDispensa = prefs.getString("nomeDispensa");
+      idDispensa = prefs.getString("idDispensa");
+      if (nomeDispensa == null || idDispensa == null) {
+        nomeDispensa = dispense[0].nome;
+        idDispensa = dispense[0].id;
+      }
+
+      List<Widget> oggetti = dispense
+          .map((Dispensa dispensa) => ListTile(
+              leading: Icon(Icons.text_snippet),
+              title: Text(dispensa.nome),
+              onTap: () async {
+                EasyLoading.instance.indicatorType =
+                    EasyLoadingIndicatorType.foldingCube;
+                EasyLoading.instance.userInteractions = false;
+                EasyLoading.show();
+                prefs.setString("idDispensa", dispensa.id);
+                prefs.setString("nomeDispensa", dispensa.nome);
+                List<Post> cose = await httpService.getPosts(dispensa.id);
+                if (cose.length > 0) {
+                  setState(() {
+                    oggetti2 = cose
+                        .map(
+                          (Post post) => _itemBuilder(post),
+                        )
+                        .toList();
+                  });
+                } else {
+                  oggetti2 = [Text("Nessun prodotto presente")];
+                }
                 setState(() {
-                  oggetti2 = cose
-                      .map(
-                        (Post post) => _itemBuilder(post),
-                      )
-                      .toList();
+                  nomeDispensa = dispensa.nome;
+                  idDispensa = dispensa.id;
                 });
-              } else {
-                oggetti2 = [Text("Nessun prodotto presente")];
-              }
-              setState(() {
-                nomeDispensa = dispensa.nome;
-                idDispensa = dispensa.id;
-              });
-              Navigator.pop(context);
-              EasyLoading.dismiss();
-            }))
-        .toList();
-    var app = new ListView.builder(
-      scrollDirection: Axis.vertical,
-      shrinkWrap: true,
-      itemCount: oggetti.length,
-      itemBuilder: (BuildContext context, int index) {
-        return oggetti[index];
-      },
-    );
+                Navigator.pop(context);
+                EasyLoading.dismiss();
+              }))
+          .toList();
+      var app = new ListView.builder(
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        itemCount: oggetti.length,
+        itemBuilder: (BuildContext context, int index) {
+          return oggetti[index];
+        },
+      );
 
-    List<Post> cose = await httpService.getPosts(idDispensa);
-    if (cose.length > 0) {
+      List<Post> cose = await httpService.getPosts(idDispensa);
+      if (cose.length > 0) {
+        setState(() {
+          oggetti2 = cose
+              .map(
+                (Post post) => _itemBuilder(post),
+              )
+              .toList();
+        });
+      } else {
+        oggetti2 = [Text("Nessun elemento presente")];
+      }
       setState(() {
-        oggetti2 = cose
-            .map(
-              (Post post) => _itemBuilder(post),
-            )
-            .toList();
+        idDispensa = dispense[0].id;
+        elencoDispense = app;
       });
-    } else {
-      oggetti2 = [Text("Nessun elemento presente")];
     }
-    setState(() {
-      idDispensa = dispense[0].id;
-      elencoDispense = app;
-    });
   }
 
   @override
@@ -185,11 +186,12 @@ class _MyDispensaState extends State<MyDispensa> {
                   child: Icon(Icons.add),
                   onPressed: () async {
                     pop.callback = caricaDispense;
-                    showDialog(
+                    await showDialog(
                         context: context,
                         builder: (BuildContext context) {
                           return pop.popupDispensa(context);
                         });
+                    Navigator.pop(context);
                   }),
             ],
           ),

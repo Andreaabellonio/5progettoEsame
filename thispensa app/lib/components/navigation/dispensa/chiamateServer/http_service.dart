@@ -80,7 +80,7 @@ class HttpService {
       //print(lista);
 
       List<Dispensa> dispense = [];
-      if (lista != null)
+      if (lista.length > 0)
         for (var i = 0; i < lista.length; i++) {
           dispense.add(Dispensa(
             id: lista[i]["_id"] as String,

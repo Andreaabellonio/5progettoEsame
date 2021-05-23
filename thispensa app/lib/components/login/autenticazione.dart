@@ -193,7 +193,7 @@ class _registerPage extends State<RegisterPage> {
                                 },
                                 obscureText: true,
                               ),
-                              SizedBox(height: 20),                            
+                              SizedBox(height: 20),
                               Container(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
@@ -605,12 +605,14 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text("Errore nel server durante il login"),
             ));
+          EasyLoading.dismiss();
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text(
               "Prima bisogna verificare l'indirizzo email per poter continaure"),
         ));
+        EasyLoading.dismiss();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -618,6 +620,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
           content: Text('Password o username errati'),
         ),
       );
+      EasyLoading.dismiss();
     }
   }
 }

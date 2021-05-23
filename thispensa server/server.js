@@ -231,9 +231,14 @@ app.post("/leggiUtente", function (req, res) {
 
 app.post("/leggiIdDispense", function (req, res) {
     mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-        mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1 }, function (data) {
-            res.send({ errore: false, dati: data });
-        });
+        if (data[0]["dispense"] && data[0]["dispense"].length > 0) {
+            mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1 }, function (data) {
+                res.send(JSON.stringify({ errore: false, dati: data }));
+            });
+        }
+        else {
+            res.send(JSON.stringify({ errore: false, dati: [] }));
+        }
     });
 });
 

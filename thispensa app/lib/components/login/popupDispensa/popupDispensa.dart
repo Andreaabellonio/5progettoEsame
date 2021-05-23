@@ -14,8 +14,8 @@ final FirebaseAuth _auth = FirebaseAuth.instance;
 class PopUpClass {
   Function callback;
   bool first = false;
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _dispensaController = TextEditingController();
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  TextEditingController _dispensaController = TextEditingController();
   TextStyle linkStyle = const TextStyle(
     color: Colors.blue,
     decoration: TextDecoration.underline,
@@ -77,7 +77,6 @@ class PopUpClass {
                   actions: <Widget>[
                     Form(
                       key: _formKey, //?
-
                       child: Column(
                         children: [
                           TextFormField(
@@ -135,8 +134,9 @@ class PopUpClass {
                                             await _prefs;
                                         prefs.setString(
                                             "idDispensa", data["idDispensa"]);
-                                        prefs.setString(
-                                            "nome", data["nome"]);
+                                        prefs.setString("nomeDispensa", data["nome"]);
+                                        EasyLoading.dismiss();
+                                        Navigator.pop(context);
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           const SnackBar(
@@ -144,7 +144,10 @@ class PopUpClass {
                                                 'Dispensa aggiunta con successo!'),
                                           ),
                                         );
+                                        await callback();
                                       } else {
+                                        EasyLoading.dismiss();
+                                        Navigator.pop(context);
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           const SnackBar(
@@ -153,9 +156,6 @@ class PopUpClass {
                                           ),
                                         );
                                       }
-                                      await callback();
-                                      EasyLoading.dismiss();
-                                      Navigator.of(context).pop();
                                     });
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
