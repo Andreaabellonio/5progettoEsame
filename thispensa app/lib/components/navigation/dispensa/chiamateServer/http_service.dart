@@ -85,6 +85,7 @@ class HttpService {
           dispense.add(Dispensa(
             id: lista[i]["_id"] as String,
             nome: lista[i]["nome"] as String,
+            creatore: lista[i]["creatore"] as String,
           ));
         }
       return dispense;

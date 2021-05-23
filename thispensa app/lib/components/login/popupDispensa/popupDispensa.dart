@@ -35,7 +35,7 @@ class PopUpClass {
         padding:
             EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
-          width:100,
+          width: 100,
           height: 100,
           color: Theme.of(context).scaffoldBackgroundColor,
           child: GestureDetector(
@@ -49,9 +49,8 @@ class PopUpClass {
                           MediaQuery.of(context).size.height +
                           30), //? 01:26 22/05/2021
                           */
-              child:Center(
-                child:new AlertDialog(
-                  titlePadding: EdgeInsets.symmetric(vertical: 40.0),
+              child: Center(
+                child: new AlertDialog(
                   title: Text(
                     (first)
                         ? 'Inserisci la tua prima Thispensa!'
@@ -65,12 +64,10 @@ class PopUpClass {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(Radius.circular(32.0))),
                   content: Container(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
                     child: new Column(
                       mainAxisSize: MainAxisSize.max,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
-                        //SizedBox(height: 60),
                         _buildAboutText(),
                         _buildLogoAttribution(),
                       ],
@@ -82,33 +79,29 @@ class PopUpClass {
                       child: Column(
                         children: [
                           Container(
-                            width:MediaQuery.of(context).size.width,
-                            
-                            child:
-                         TextFormField(
-                            focusNode: yourFocus,
-                            keyboardType: TextInputType.name,
-                            controller: _dispensaController,
-                            decoration: InputDecoration(
-                            
-                                labelText: (first)
-                                    ? 'Inserisci la tua prima dispensa!'
-                                    : 'Inserisci una nuova dispensa!'),
-                            validator: (String value) {
-                              if (value.isEmpty)
-                                return 'Inserire un nome per continuare <es. \'Dispensa Casa\' >';
-                              return null;
-                            },
-                          ),),
-
-                        
+                            width: MediaQuery.of(context).size.width,
+                            child: TextFormField(
+                              focusNode: yourFocus,
+                              keyboardType: TextInputType.name,
+                              controller: _dispensaController,
+                              decoration: InputDecoration(
+                                  labelText: (first)
+                                      ? 'Inserisci la tua prima dispensa!'
+                                      : 'Inserisci una nuova dispensa!'),
+                              validator: (String value) {
+                                if (value.isEmpty)
+                                  return 'Inserire un nome per continuare <es. \'Dispensa Casa\' >';
+                                return null;
+                              },
+                            ),
+                          ),
                           SizedBox(height: 20),
                           Material(
                               elevation: 5.0,
                               borderRadius: BorderRadius.circular(30.0),
                               color: Color.fromARGB(255, 249, 193, 108),
                               child: MaterialButton(
-                                minWidth: 30,
+                                minWidth: MediaQuery.of(context).size.width,
                                 padding:
                                     EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 10.0),
                                 onPressed: () async {
@@ -143,7 +136,8 @@ class PopUpClass {
                                             await _prefs;
                                         prefs.setString(
                                             "idDispensa", data["idDispensa"]);
-                                        prefs.setString("nomeDispensa", data["nome"]);
+                                        prefs.setString(
+                                            "nomeDispensa", data["nome"]);
                                         EasyLoading.dismiss();
                                         Navigator.pop(context);
                                         ScaffoldMessenger.of(context)
@@ -202,8 +196,7 @@ class PopUpClass {
                     ),
                   ],
                 ),
-              
-            ),
+              ),
             ),
           ),
         ),
@@ -221,8 +214,10 @@ class PopUpClass {
         style: const TextStyle(color: Colors.black87),
         children: <TextSpan>[
           TextSpan(
-              text:
-                  'Inizia ad utilizzare la tua applicazione inserendo la tua prima una nuova Thispensa e trova tutti i vantaggi nel raggruppare i tuoi prodotti in un unico luogo.\n\n'),
+              text: 'Inizia ad utilizzare la tua applicazione inserendo' +
+                  ((first)
+                      ? ' la tua prima'
+                      : ' una nuova Thispensa e trova tutti i vantaggi nel raggruppare i tuoi prodotti in un unico luogo.\n\n')),
           TextSpan(
             text:
                 'All\'interno troverai tantissime funzionalità comode per salvare, cambiare ed eliminare i tuoi prodotti',

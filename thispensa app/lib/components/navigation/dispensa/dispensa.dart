@@ -5,8 +5,9 @@ import 'package:Thispensa/components/navigation/shopping_list/tasks/add_task_scr
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'package:Thispensa/models/dispensa_model.dart';
 import 'package:Thispensa/models/post_model.dart';
@@ -34,6 +35,14 @@ class _MyDispensaState extends State<MyDispensa> {
   RefreshController _refreshController =
       RefreshController(initialRefresh: true);
 
+  Widget noElements = Padding(
+      padding: const EdgeInsets.only(top: 50.0),
+      child: Center(
+          child: Text(
+        "Ancora nessun prodotto presente!",
+        style: TextStyle(fontSize: FontSize.xLarge.size),
+      )));
+
   void _onRefresh() async {
     pop.first = false;
     setState(() {
@@ -56,15 +65,9 @@ class _MyDispensaState extends State<MyDispensa> {
 
   @override
   void initState() {
-    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
-    EasyLoading.instance.userInteractions = false;
-    EasyLoading.show();
+    EasyLoading.dismiss();
     pop.callback = caricaDispense;
-    //caricaDispense();
     super.initState();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      EasyLoading.dismiss();
-    });
   }
 
   void caricaDispense() async {
@@ -91,35 +94,136 @@ class _MyDispensaState extends State<MyDispensa> {
       }
 
       List<Widget> oggetti = dispense
-          .map((Dispensa dispensa) => ListTile(
-              leading: Icon(Icons.text_snippet),
-              title: Text(dispensa.nome),
-              onTap: () async {
-                EasyLoading.instance.indicatorType =
-                    EasyLoadingIndicatorType.foldingCube;
-                EasyLoading.instance.userInteractions = false;
-                EasyLoading.show();
-                prefs.setString("idDispensa", dispensa.id);
-                prefs.setString("nomeDispensa", dispensa.nome);
-                List<Post> cose = await httpService.getPosts(dispensa.id);
-                if (cose.length > 0) {
-                  setState(() {
-                    oggetti2 = cose
-                        .map(
-                          (Post post) => _itemBuilder(post),
-                        )
-                        .toList();
-                  });
-                } else {
-                  oggetti2 = [Text("Nessun prodotto presente")];
-                }
-                setState(() {
-                  nomeDispensa = dispensa.nome;
-                  idDispensa = dispensa.id;
-                });
-                Navigator.pop(context);
-                EasyLoading.dismiss();
-              }))
+          .map(
+            (Dispensa dispensa) => Slidable(
+              actionPane: SlidableDrawerActionPane(),
+              actionExtentRatio: 0.20,
+              child: ListTile(
+                  leading: Icon(Icons.text_snippet),
+                  title: Text(dispensa.nome),
+                  onTap: () async {
+                    EasyLoading.instance.indicatorType =
+                        EasyLoadingIndicatorType.foldingCube;
+                    EasyLoading.instance.userInteractions = false;
+                    EasyLoading.show();
+                    prefs.setString("idDispensa", dispensa.id);
+                    prefs.setString("nomeDispensa", dispensa.nome);
+                    List<Post> cose = await httpService.getPosts(dispensa.id);
+                    if (cose.length > 0) {
+                      setState(() {
+                        oggetti2 = cose
+                            .map(
+                              (Post post) => _itemBuilder(post),
+                            )
+                            .toList();
+                      });
+                    } else {
+                      oggetti2 = [noElements];
+                    }
+                    setState(() {
+                      nomeDispensa = dispensa.nome;
+                      idDispensa = dispensa.id;
+                    });
+                    Navigator.pop(context);
+                    EasyLoading.dismiss();
+                  }),
+              actions: <Widget>[
+                (_auth.currentUser.uid == dispensa.creatore)
+                    ? IconSlideAction(
+                        caption: 'Elimina',
+                        color: Colors.red,
+                        icon: Icons.delete,
+                        onTap: () {
+                          showDialog<String>(
+                              context: context,
+                              builder: (BuildContext context) => AlertDialog(
+                                    title: const Text('ATTENZIONE!'),
+                                    content: const Text(
+                                        'Sei sicuro di voler eliminare DEFINITIVAMENTE la dispensa e tutti gli elementi al suo interno?'),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'Annulla'),
+                                        child: const Text('Annulla'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          EasyLoading.instance.indicatorType =
+                                              EasyLoadingIndicatorType
+                                                  .foldingCube;
+                                          EasyLoading.instance
+                                              .userInteractions = false;
+                                          EasyLoading.show();
+                                          try {
+                                            var params = {
+                                              "uid": _auth.currentUser.uid
+                                                  .toString(),
+                                              "tokenJWT": await _auth
+                                                  .currentUser
+                                                  .getIdToken(),
+                                              "idDispensa": dispensa.id
+                                            };
+                                            http.post(
+                                                Uri.https(
+                                                    'thispensa.herokuapp.com',
+                                                    '/eliminaDispensa'),
+                                                body: json.encode(params),
+                                                headers: {
+                                                  "Accept": "application/json",
+                                                  HttpHeaders.contentTypeHeader:
+                                                      "application/json"
+                                                }).then((response) async {
+                                              Map data =
+                                                  jsonDecode(response.body);
+                                              if (!data["errore"]) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        "Dispensa eliminata con successo!"),
+                                                  ),
+                                                );
+                                                //le pulisco così poi al prossimo refresh mi carica la prima dispensa
+                                                prefs.remove("nomeDispensa");
+                                                prefs.remove(
+                                                    "idDispensa");
+                                                await _onRefresh();
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    backgroundColor: Colors.red,
+                                                    content: Text(
+                                                        "Errore durante l'eliminazione"),
+                                                  ),
+                                                );
+                                              }
+                                              EasyLoading.dismiss();
+                                              Navigator.pop(context);
+                                            });
+                                          } catch (e) {
+                                            print(e);
+                                            EasyLoading.dismiss();
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                    'Errore durante l\'eliminazione $e'),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: const Text('SI'),
+                                      ),
+                                    ],
+                                  ));
+                        },
+                      )
+                    : SizedBox.shrink(),
+              ],
+            ),
+          )
           .toList();
       var app = new ListView.builder(
         scrollDirection: Axis.vertical,
@@ -140,7 +244,7 @@ class _MyDispensaState extends State<MyDispensa> {
               .toList();
         });
       } else {
-        oggetti2 = [Text("Nessun elemento presente")];
+        oggetti2 = [noElements];
       }
       setState(() {
         idDispensa = dispense[0].id;

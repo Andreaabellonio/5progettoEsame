@@ -232,7 +232,7 @@ app.post("/leggiUtente", function (req, res) {
 app.post("/leggiIdDispense", function (req, res) {
     mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
         if (data[0]["dispense"] && data[0]["dispense"].length > 0) {
-            mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1 }, function (data) {
+            mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1, creatore: 1 }, function (data) {
                 res.send(JSON.stringify({ errore: false, dati: data }));
             });
         }
@@ -333,8 +333,10 @@ app.post("/eliminaProdotto", function (req, res) {
 });
 
 app.post("/eliminaDispensa", function (req, res) {
-    mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, function (data) {
-        res.send(JSON.stringify({ errore: false }));
+    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $pull: { dispense: mongo.ObjectID(req.body.idDispensa) } }, {}, function (data) {
+        mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), creatore: req.body.uid }, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
     });
 });
 
