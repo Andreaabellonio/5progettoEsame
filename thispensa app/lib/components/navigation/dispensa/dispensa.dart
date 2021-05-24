@@ -21,10 +21,13 @@ final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class MyDispensa extends StatefulWidget {
   @override
-  _MyDispensaState createState() => _MyDispensaState();
+  MyDispensaState createState() => MyDispensaState();
 }
 
-class _MyDispensaState extends State<MyDispensa> {
+class MyDispensaState extends State<MyDispensa> {
+  TextEditingController _searchQueryController = TextEditingController();
+  bool _isSearching = false;
+  String searchQuery = "Search query";
   final HttpService httpService = HttpService();
   String idDispensa;
   String nomeDispensa =
@@ -43,7 +46,7 @@ class _MyDispensaState extends State<MyDispensa> {
         style: TextStyle(fontSize: FontSize.xLarge.size),
       )));
 
-  void _onRefresh() async {
+  void onRefresh() async {
     pop.first = false;
     setState(() {
       oggetti2 = []; //CHI TOCCA MUORE: senza questa schifezza non va nulla
@@ -51,7 +54,9 @@ class _MyDispensaState extends State<MyDispensa> {
     await caricaDispense();
     if (mounted) {
       setState(() {
-        _refreshController.refreshCompleted();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _refreshController.refreshCompleted();
+        });
       });
     }
   }
@@ -79,7 +84,7 @@ class _MyDispensaState extends State<MyDispensa> {
           builder: (BuildContext context) {
             return pop.popupDispensa(context);
           });
-      _onRefresh(); //ricarico gli elementi dopo che ha inserito una nuova dispensa
+      onRefresh(); //ricarico gli elementi dopo che ha inserito una nuova dispensa
       pop.first = false;
     } else {
       pop.first = false;
@@ -95,41 +100,42 @@ class _MyDispensaState extends State<MyDispensa> {
 
       List<Widget> oggetti = dispense
           .map(
-            (Dispensa dispensa) => Slidable(
-              actionPane: SlidableDrawerActionPane(),
-              actionExtentRatio: 0.20,
-              child: ListTile(
-                  leading: Icon(Icons.text_snippet),
-                  title: Text(dispensa.nome),
-                  onTap: () async {
-                    EasyLoading.instance.indicatorType =
-                        EasyLoadingIndicatorType.foldingCube;
-                    EasyLoading.instance.userInteractions = false;
-                    EasyLoading.show();
-                    prefs.setString("idDispensa", dispensa.id);
-                    prefs.setString("nomeDispensa", dispensa.nome);
-                    List<Post> cose = await httpService.getPosts(dispensa.id);
-                    if (cose.length > 0) {
-                      setState(() {
-                        oggetti2 = cose
-                            .map(
-                              (Post post) => _itemBuilder(post),
-                            )
-                            .toList();
-                      });
-                    } else {
-                      oggetti2 = [noElements];
-                    }
-                    setState(() {
-                      nomeDispensa = dispensa.nome;
-                      idDispensa = dispensa.id;
-                    });
-                    Navigator.pop(context);
-                    EasyLoading.dismiss();
-                  }),
-              actions: <Widget>[
-                (_auth.currentUser.uid == dispensa.creatore)
-                    ? IconSlideAction(
+            (Dispensa dispensa) => (_auth.currentUser.uid == dispensa.creatore)
+                ? Slidable(
+                    actionPane: SlidableDrawerActionPane(),
+                    actionExtentRatio: 0.20,
+                    child: ListTile(
+                        leading: Icon(Icons.text_snippet),
+                        title: Text(dispensa.nome),
+                        onTap: () async {
+                          EasyLoading.instance.indicatorType =
+                              EasyLoadingIndicatorType.foldingCube;
+                          EasyLoading.instance.userInteractions = false;
+                          EasyLoading.show();
+                          prefs.setString("idDispensa", dispensa.id);
+                          prefs.setString("nomeDispensa", dispensa.nome);
+                          List<Post> cose =
+                              await httpService.getPosts(dispensa.id);
+                          if (cose.length > 0) {
+                            setState(() {
+                              oggetti2 = cose
+                                  .map(
+                                    (Post post) => _itemBuilder(post),
+                                  )
+                                  .toList();
+                            });
+                          } else {
+                            oggetti2 = [noElements];
+                          }
+                          setState(() {
+                            nomeDispensa = dispensa.nome;
+                            idDispensa = dispensa.id;
+                          });
+                          Navigator.pop(context);
+                          EasyLoading.dismiss();
+                        }),
+                    actions: <Widget>[
+                      IconSlideAction(
                         caption: 'Elimina',
                         color: Colors.red,
                         icon: Icons.delete,
@@ -185,9 +191,8 @@ class _MyDispensaState extends State<MyDispensa> {
                                                 );
                                                 //le pulisco così poi al prossimo refresh mi carica la prima dispensa
                                                 prefs.remove("nomeDispensa");
-                                                prefs.remove(
-                                                    "idDispensa");
-                                                await _onRefresh();
+                                                prefs.remove("idDispensa");
+                                                await onRefresh();
                                               } else {
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(
@@ -220,9 +225,37 @@ class _MyDispensaState extends State<MyDispensa> {
                                   ));
                         },
                       )
-                    : SizedBox.shrink(),
-              ],
-            ),
+                    ],
+                  )
+                : ListTile(
+                    leading: Icon(Icons.text_snippet),
+                    title: Text(dispensa.nome),
+                    onTap: () async {
+                      EasyLoading.instance.indicatorType =
+                          EasyLoadingIndicatorType.foldingCube;
+                      EasyLoading.instance.userInteractions = false;
+                      EasyLoading.show();
+                      prefs.setString("idDispensa", dispensa.id);
+                      prefs.setString("nomeDispensa", dispensa.nome);
+                      List<Post> cose = await httpService.getPosts(dispensa.id);
+                      if (cose.length > 0) {
+                        setState(() {
+                          oggetti2 = cose
+                              .map(
+                                (Post post) => _itemBuilder(post),
+                              )
+                              .toList();
+                        });
+                      } else {
+                        oggetti2 = [Text("Nessun prodotto presente")];
+                      }
+                      setState(() {
+                        nomeDispensa = dispensa.nome;
+                        idDispensa = dispensa.id;
+                      });
+                      Navigator.pop(context);
+                      EasyLoading.dismiss();
+                    }),
           )
           .toList();
       var app = new ListView.builder(
@@ -256,84 +289,165 @@ class _MyDispensaState extends State<MyDispensa> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(nomeDispensa),
-        ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Colori.primario,
-          child: Icon(Icons.add),
-          onPressed: () => Navigator.push(context,
-              MaterialPageRoute(builder: (context) => AddTaskScreen())),
-        ),
-        drawer: Drawer(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colori.primario,
-                ),
-                child: Text(
-                  'Dispense',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 40.0,
-                      fontWeight: FontWeight.bold),
-                ),
+      appBar: AppBar(
+        leading: _isSearching
+            ? const BackButton()
+            : (Builder(
+                builder: (context) => IconButton(
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                    icon: Icon(Icons.menu)))),
+        title: _isSearching ? _buildSearchField() : Text(nomeDispensa),
+        actions: _buildActions(),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colori.primario,
+        child: Icon(Icons.add),
+        onPressed: () => Navigator.push(
+            context, MaterialPageRoute(builder: (context) => AddTaskScreen())),
+      ),
+      drawer: Drawer(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colori.primario,
               ),
-              (elencoDispense != null)
-                  ? elencoDispense
-                  : Center(child: CircularProgressIndicator()),
-              SizedBox(height: 15),
-              FloatingActionButton(
-                  backgroundColor: Colori.primario,
-                  child: Icon(Icons.add),
-                  onPressed: () async {
-                    pop.callback = caricaDispense;
-                    await showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return pop.popupDispensa(context);
-                        });
-                    Navigator.pop(context);
-                  }),
-            ],
-          ),
+              child: Text(
+                'Dispense',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 40.0,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+            (elencoDispense != null)
+                ? elencoDispense
+                : Center(child: CircularProgressIndicator()),
+            SizedBox(height: 15),
+            FloatingActionButton(
+                backgroundColor: Colori.primario,
+                child: Icon(Icons.add),
+                onPressed: () async {
+                  pop.callback = caricaDispense;
+                  await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return pop.popupDispensa(context);
+                      });
+                  Navigator.pop(context);
+                }),
+          ],
         ),
-        body: SmartRefresher(
-          enablePullDown: true,
-          header: MaterialClassicHeader(color: Colori.primario),
-          footer: CustomFooter(
-            builder: (BuildContext context, LoadStatus mode) {
-              Widget body;
-              if (mode == LoadStatus.idle) {
-                body = Text("pull up load");
-              } else if (mode == LoadStatus.loading) {
-                body = CupertinoActivityIndicator();
-              } else if (mode == LoadStatus.failed) {
-                body = Text("Load Failed!Click retry!");
-              } else if (mode == LoadStatus.canLoading) {
-                body = Text("release to load more");
-              } else {
-                body = Text("No more Data");
-              }
-              return Container(
-                height: 55.0,
-                child: Center(child: body),
-              );
-            },
-          ),
-          controller: _refreshController,
-          onRefresh: _onRefresh,
-          onLoading: _onLoading,
-          child: new ListView.builder(
-            itemCount: oggetti2.length,
-            itemBuilder: (BuildContext context, int index) {
-              print(oggetti2[index]);
-              return oggetti2[index];
-            },
-          ),
-        ));
+      ),
+      body: SmartRefresher(
+        enablePullDown: true,
+        header: MaterialClassicHeader(color: Colori.primario),
+        footer: CustomFooter(
+          builder: (BuildContext context, LoadStatus mode) {
+            Widget body;
+            if (mode == LoadStatus.idle) {
+              body = Text("pull up load");
+            } else if (mode == LoadStatus.loading) {
+              body = CupertinoActivityIndicator();
+            } else if (mode == LoadStatus.failed) {
+              body = Text("Load Failed!Click retry!");
+            } else if (mode == LoadStatus.canLoading) {
+              body = Text("release to load more");
+            } else {
+              body = Text("No more Data");
+            }
+            return Container(
+              height: 55.0,
+              child: Center(child: body),
+            );
+          },
+        ),
+        controller: _refreshController,
+        onRefresh: onRefresh,
+        onLoading: _onLoading,
+        child: new ListView.builder(
+          itemCount: oggetti2.length,
+          itemBuilder: (BuildContext context, int index) {
+            print(oggetti2[index]);
+            return oggetti2[index];
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchQueryController,
+      autofocus: true,
+      decoration: InputDecoration(
+        hintText: "Search Data...",
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: Colors.white30),
+      ),
+      style: TextStyle(color: Colors.white, fontSize: 16.0),
+      onChanged: (query) => updateSearchQuery(query),
+    );
+  }
+
+  List<Widget> _buildActions() {
+    if (_isSearching) {
+      return <Widget>[
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            if (_searchQueryController == null ||
+                _searchQueryController.text.isEmpty) {
+              Navigator.pop(context);
+              return;
+            }
+            _clearSearchQuery();
+          },
+        ),
+      ];
+    }
+
+    return <Widget>[
+      IconButton(
+        icon: const Icon(Icons.search),
+        onPressed: _startSearch,
+      ),
+    ];
+  }
+
+  void _startSearch() {
+    ModalRoute.of(context)
+        .addLocalHistoryEntry(LocalHistoryEntry(onRemove: _stopSearching));
+
+    setState(() {
+      _isSearching = true;
+    });
+  }
+
+  void updateSearchQuery(String newQuery) {
+    print(newQuery);
+
+    setState(() {
+      searchQuery = newQuery;
+    });
+  }
+
+  void _stopSearching() {
+    _clearSearchQuery();
+
+    setState(() {
+      _isSearching = false;
+    });
+  }
+
+  void _clearSearchQuery() {
+    setState(() {
+      _searchQueryController.clear();
+      updateSearchQuery("");
+    });
   }
 
   Widget _itemBuilder(Post post) {
@@ -423,20 +537,28 @@ class _PostTileState extends State<PostTile> {
       onPressed: () async {
         var params = {
           "barcode": post.barcode,
-          "number": numberPicker.value,
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
         };
-        http.Response res = await http.post(Uri.parse(postsURL),
+        http.Response res = await http.post(
+            Uri.https('thispensa.herokuapp.com', '/eliminaElementoDispensa'),
             body: json.encode(params),
             headers: {
               "Accept": "application/json",
               HttpHeaders.contentTypeHeader: "application/json"
             });
         if (res.statusCode == 200) {
-          dynamic body = jsonDecode(res.body);
-          List<dynamic> lista = body["prodotti"];
-          print(lista);
+          Map data = jsonDecode(res.body);
+          if (!data["errore"]) {
+            MyDispensaState()._onLoading();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Colors.red,
+                content: Text("Errore durante l'eliminazione!"),
+              ),
+            );
+          }
         } else {
           throw "Unable to retrieve posts.";
         }

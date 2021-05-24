@@ -340,6 +340,21 @@ app.post("/eliminaDispensa", function (req, res) {
     });
 });
 
+app.post("/eliminaElementoDispensa", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $pull: { "elementi.$.idProdotto": req.body.barcode } }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+//TODO
+app.post("/aggiornaDispensa", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $pull: { dispense: mongo.ObjectID(req.body.idDispensa) } }, {}, function (data) {
+        mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), creatore: req.body.uid }, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });
+});
+
 //? AGGIORNAMENTO CODICE FCM
 app.post("/aggiornaTokenFCM", function (req, res) {
     mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $set: { tokenFCM: req.body.token } }, { upsert: true }, function (data) {
