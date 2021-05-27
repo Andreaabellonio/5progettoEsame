@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "1085192562899-qugcdodi1louu5lmk0pm3j6ms66bnint.apps.googleusercontent.com",
+          "client_id": "1085192562899-2pvr9v7vgjv2cio3tk28ghafe3202mha.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.thispensa.thispensa",
-            "certificate_hash": "489ea9e7630110560781956ea954d01527f3d226"
+            "certificate_hash": "1c7076b294e76c3878f041ed0bdd98d2d981b11c"
           }
         },
         {

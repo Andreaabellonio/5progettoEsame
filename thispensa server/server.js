@@ -266,17 +266,27 @@ app.post("/ricercaProdotto", function (req, res) {
 //qta
 //dataScadenza
 app.post("/inserisciProdottoDispensa", function (req, res) {
-    let dato = {
-        idProdotto: req.body.barcode,
-        nome: req.body.nome,
-        dataInserimento: new Date(Date.now()),
-        dataScadenza: new Date(req.body.dataScadenza),
-        idUtente: mongo.ObjectID(req.body.idUtente),
-        qta: req.body.qta
-    };
-    //? Con upsert se esiste fa l'update se non esiste lo inserisce
-    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $push: { "elementi": dato } }, {}, function (data) {
-        res.send(JSON.stringify({ errore: false }));
+    //? ricerco se sono già presenti prodotti con questo barcode
+    mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), elementi: { $elemMatch: { idProdotto: req.body.barcode } } }, { "elementi.$": 1 }, function (data) {
+        if (data.length > 0) {
+            mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), "elementi.idProdotto": req.body.barcode }, { $inc: { "elementi.$.qta": req.body.qta } }, {}, function (data) {
+                res.send(JSON.stringify({ errore: false }));
+            });
+        }
+        else {
+            let dato = {
+                idProdotto: req.body.barcode,
+                nome: req.body.nome,
+                dataInserimento: new Date(Date.now()),
+                dataScadenza: new Date(req.body.dataScadenza),
+                idUtente: mongo.ObjectID(req.body.idUtente),
+                qta: req.body.qta
+            };
+            //? Con upsert se esiste fa l'update se non esiste lo inserisce
+            mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $push: { "elementi": dato } }, {}, function (data) {
+                res.send(JSON.stringify({ errore: false }));
+            });
+        }
     });
 });
 
@@ -341,7 +351,7 @@ app.post("/eliminaDispensa", function (req, res) {
 });
 
 app.post("/eliminaElementoDispensa", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $pull: { "elementi.$.idProdotto": req.body.barcode } }, {}, function (data) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $pull: { elementi: { idProdotto: req.body.barcode } } }, {}, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });

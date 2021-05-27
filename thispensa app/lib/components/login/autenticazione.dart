@@ -545,7 +545,14 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
         if (!data["errore"]) {
           Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
           final SharedPreferences prefs = await _prefs;
-          prefs.setBool("googleLogin", true);
+          if (prefs.getString("email") == null ||
+              prefs.getString("email") == user.email)
+            prefs.setBool("googleLogin", true);
+          else {
+            prefs
+                .clear(); //? l'utente non è lo stesso che c'era prima, pulisco tutto
+            prefs.setString("email", user.email);
+          }
           Navigator.pushReplacement(
               context, MaterialPageRoute(builder: (context) => MyNavWidget()));
         }
@@ -596,7 +603,14 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
             //? salvo come ha fatto il login per poi non lasciargli cambiare la password dalla pagina dell'utente
             Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
             final SharedPreferences prefs = await _prefs;
-            prefs.setBool("googleLogin", false);
+            if (prefs.getString("email") == null ||
+                prefs.getString("email") == user.email)
+              prefs.setBool("googleLogin", false);
+            else {
+              prefs
+                  .clear(); //? l'utente non è lo stesso che c'era prima, pulisco tutto
+              prefs.setString("email", user.email);
+            }
             Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(

@@ -522,7 +522,29 @@ class _PostTileState extends State<PostTile> {
       itemHeight: 50,
       itemWidth: 50,
       axis: Axis.horizontal,
-      onChanged: (value) => setState(() => post.qta = value),
+      onChanged: (value) async {
+        setState(() => post.qta = value);
+        http.Response res = await http.post(
+            Uri.https('thispensa.herokuapp.com', '/aggiorna'),
+            body: json.encode(post),
+            headers: {
+              "Accept": "application/json",
+              HttpHeaders.contentTypeHeader: "application/json"
+            });
+        if (res.statusCode == 200) {
+          Map data = jsonDecode(res.body);
+          if (!data["errore"]) {
+            MyDispensaState()._onLoading();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Colors.red,
+                content: Text("Errore durante l'aggiornamento!"),
+              ),
+            );
+          }
+        }
+      },
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.black26),
@@ -535,8 +557,11 @@ class _PostTileState extends State<PostTile> {
       color: Colori.scuro,
       iconSize: 35,
       onPressed: () async {
+        Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+        final SharedPreferences prefs = await _prefs;
         var params = {
           "barcode": post.barcode,
+          "idDispensa": prefs.getString("idDispensa"),
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
         };
