@@ -215,153 +215,19 @@ app.post("/ricercaProdottoBarcode", function (req, res, next) {
 });
 */
 
-app.post("/creaDispensa", function (req, res) {
-    mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
-        mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
-        });
-    });
-});
+//#region gestioneUtenti
 
+//? Lettura dati relativi all'utente
 app.post("/leggiUtente", function (req, res) {
     mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { nome: 1, cognome: 1, email: 1 }, function (data) {
         res.send(JSON.stringify({ errore: false, data: data[0] }));
     });
 });
 
-app.post("/leggiIdDispense", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-        if (data[0]["dispense"] && data[0]["dispense"].length > 0) {
-            mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1, creatore: 1 }, function (data) {
-                res.send(JSON.stringify({ errore: false, dati: data }));
-            });
-        }
-        else {
-            res.send(JSON.stringify({ errore: false, dati: [] }));
-        }
-    });
-});
-
+//? Aggiornamento dati utente
 app.post("/aggiornaUtente", function (req, res) {
     mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $set: { nome: req.body.nome, cognome: req.body.cognome } }, {}, function (data) {
         res.send(JSON.stringify({ errore: false }));
-    });
-});
-
-//? DATI INPUT
-//barcode
-app.post("/ricercaProdotto", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "prodotti", { barcode: req.body.barcode }, {}, function (data) {
-        if (data.length > 0) {
-            res.send(JSON.stringify({ trovato: true, prodotto: data }));
-        } else
-            res.send(JSON.stringify({ trovato: false }));
-    });
-});
-
-//?DATI INPUT
-//barcode
-//idDispensa
-//idUtente
-//qta
-//dataScadenza
-app.post("/inserisciProdottoDispensa", function (req, res) {
-    //? ricerco se sono già presenti prodotti con questo barcode
-    mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), elementi: { $elemMatch: { idProdotto: req.body.barcode } } }, { "elementi.$": 1 }, function (data) {
-        if (data.length > 0) {
-            mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), "elementi.idProdotto": req.body.barcode }, { $inc: { "elementi.$.qta": req.body.qta } }, {}, function (data) {
-                res.send(JSON.stringify({ errore: false }));
-            });
-        }
-        else {
-            let dato = {
-                idProdotto: req.body.barcode,
-                nome: req.body.nome,
-                dataInserimento: new Date(Date.now()),
-                dataScadenza: new Date(req.body.dataScadenza),
-                idUtente: mongo.ObjectID(req.body.idUtente),
-                qta: req.body.qta
-            };
-            //? Con upsert se esiste fa l'update se non esiste lo inserisce
-            mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $push: { "elementi": dato } }, {}, function (data) {
-                res.send(JSON.stringify({ errore: false }));
-            });
-        }
-    });
-});
-
-//?DATI INPUT
-//barcode
-//idDispensa
-//idUtente
-//qta
-//dataScadenza
-app.post("/aggiornaProdottoDispensa", function (req, res) {
-    let dato = {
-        idProdotto: req.body.barcode,
-        nome: req.body.nome,
-        dataScadenza: new Date(req.body.dataScadenza),
-        idUtente: req.body.uid,
-        qta: req.body.qta
-    };
-    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $set: dato }, {}, function (data) {
-        res.send(JSON.stringify({ errore: false }));
-    });
-});
-
-//?DATI INPUT
-//idDispensa
-app.post("/leggiDispensa", function (req, res) {
-    if (req.body.idDispensa != "default") {
-        mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { elementi: 1 }, function (data) {
-            res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
-        });
-    }
-    else {
-        mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-            mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
-                res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
-            });
-        });
-    }
-});
-
-//?DATI INPUT
-//oggetto prodotto
-app.post("/aggiornaProdotto", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "prodotti", { barcode: req.body.barcode }, { $set: req.body.prodotto }, { upsert: true }, function (data) {
-        res.send(JSON.stringify({ errore: false }));
-    });
-});
-
-//? DATI INPUT
-//barcode
-app.post("/eliminaProdotto", function (req, res) {
-    mongoFunctions.deleteMany(res, nomeDb, "prodotti", { barcode: req.body.barcode }, function (data) {
-        res.send(JSON.stringify({ errore: false }));
-    });
-});
-
-app.post("/eliminaDispensa", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $pull: { dispense: mongo.ObjectID(req.body.idDispensa) } }, {}, function (data) {
-        mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), creatore: req.body.uid }, function (data) {
-            res.send(JSON.stringify({ errore: false }));
-        });
-    });
-});
-
-app.post("/eliminaElementoDispensa", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $pull: { elementi: { idProdotto: req.body.barcode } } }, {}, function (data) {
-        res.send(JSON.stringify({ errore: false }));
-    });
-});
-
-//TODO
-app.post("/aggiornaDispensa", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $pull: { dispense: mongo.ObjectID(req.body.idDispensa) } }, {}, function (data) {
-        mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), creatore: req.body.uid }, function (data) {
-            res.send(JSON.stringify({ errore: false }));
-        });
     });
 });
 
@@ -371,7 +237,6 @@ app.post("/aggiornaTokenFCM", function (req, res) {
         res.send(JSON.stringify({ errore: false }));
     });
 });
-
 
 //? elimino solamente le dispense e le liste create dell'utente
 app.post("/eliminaAccount", function (req, res) {
@@ -389,6 +254,133 @@ app.post("/logout", function (req, res) {
     req.session.destroy();
     res.send(JSON.stringify({ errore: false }));
 });
+//#endregion
+
+//#region gestioneProdotti
+
+//? Ricerca prodotto dato il barcode
+app.post("/ricercaProdotto", function (req, res) {
+    mongoFunctions.find(res, nomeDb, "prodotti", { barcode: req.body.barcode }, {}, function (data) {
+        if (data.length > 0) {
+            res.send(JSON.stringify({ trovato: true, prodotto: data }));
+        } else
+            res.send(JSON.stringify({ trovato: false }));
+    });
+});
+
+//?DATI INPUT
+//oggetto prodotto
+app.post("/aggiornaProdotto", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "prodotti", { barcode: req.body.barcode }, { $set: req.body.prodotto }, { upsert: true }, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+//? DATI INPUT
+//barcode
+app.post("/eliminaProdotto", function (req, res) {
+    mongoFunctions.deleteMany(res, nomeDb, "prodotti", { barcode: req.body.barcode }, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+//#endregion
+
+//#region gestioneDispense
+
+//? creazione della dispensa
+app.post("/creaDispensa", function (req, res) {
+    mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
+        mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
+            res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
+        });
+    });
+});
+
+//? lettura di tutte le dispense di un utente
+app.post("/leggiIdDispense", function (req, res) {
+    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
+        if (data[0]["dispense"] && data[0]["dispense"].length > 0) {
+            mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1, creatore: 1 }, function (data) {
+                res.send(JSON.stringify({ errore: false, dati: data }));
+            });
+        }
+        else {
+            res.send(JSON.stringify({ errore: false, dati: [] }));
+        }
+    });
+});
+
+//? Inserimento prodotto dispensa
+app.post("/inserisciProdottoDispensa", function (req, res) {
+    let dato = {
+        idProdotto: new mongo.ObjectId(),
+        barcode: req.body.barcode,
+        nome: req.body.nome,
+        dataInserimento: new Date(Date.now()),
+        dataScadenza: new Date(req.body.dataScadenza),
+        idUtente: req.body.uid,
+        qta: req.body.qta
+    };
+    //? Con upsert se esiste fa l'update se non esiste lo inserisce
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $push: { "elementi": dato } }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+//? Aggiornamento dati relativi ad un prodotto nella dispensa
+app.post("/aggiornaProdottoDispensa", function (req, res) {
+    let dato = {
+        idProdotto: req.body.idProdotto,
+        barcode: req.body.barcode,
+        nome: req.body.nome,
+        dataScadenza: new Date(req.body.dataScadenza),
+        idUtente: req.body.uid,
+        qta: req.body.qta
+    };
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $set: dato }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+//? Lettura elementi dentro una dispensa
+app.post("/leggiDispensa", function (req, res) {
+    if (req.body.idDispensa != "default") {
+        mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { elementi: 1 }, function (data) {
+            res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
+        });
+    }
+    else {
+        mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
+            mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
+                res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
+            });
+        });
+    }
+});
+
+app.post("/eliminaDispensa", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $pull: { dispense: mongo.ObjectID(req.body.idDispensa) } }, {}, function (data) {
+        mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), creatore: req.body.uid }, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });
+});
+
+app.post("/eliminaProdottoDispensa", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $pull: { elementi: { idProdotto: mongo.ObjectID(req.body.idProdotto) } } }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+//TODO
+//? aggiornamento nome della dispensa
+app.post("/aggiornaDispensa", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: req.body.idDispensa }, { $set: { "dispense.nome": req.body.nomeDispensa } }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+//#endregion
 //#endregion
 
 //#region FUNZIONI AGGIUNTIVE

@@ -46,7 +46,8 @@ class _MyNavWidgetState extends State<MyNavWidget> {
       child: MyListWidget(),
     ),
     Container(
-      child: SettingsPage(),
+      child: Settings().showMenu(),
+      //child: SettingsStatePage().showMenu(),
     ),
   ];
 

@@ -36,7 +36,7 @@ class MyDispensaState extends State<MyDispensa> {
   List<Widget> oggetti2 = [];
   PopUpClass pop = new PopUpClass();
   RefreshController _refreshController =
-      RefreshController(initialRefresh: true);
+      RefreshController(initialRefresh: false);
 
   Widget noElements = Padding(
       padding: const EdgeInsets.only(top: 50.0),
@@ -70,8 +70,8 @@ class MyDispensaState extends State<MyDispensa> {
 
   @override
   void initState() {
-    EasyLoading.dismiss();
-    pop.callback = caricaDispense;
+    pop.callback = onRefresh;
+    onRefresh();
     super.initState();
   }
 
@@ -560,13 +560,14 @@ class _PostTileState extends State<PostTile> {
         Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
         final SharedPreferences prefs = await _prefs;
         var params = {
+          "idProdotto": post.idProdotto,
           "barcode": post.barcode,
           "idDispensa": prefs.getString("idDispensa"),
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
         };
         http.Response res = await http.post(
-            Uri.https('thispensa.herokuapp.com', '/eliminaElementoDispensa'),
+            Uri.https('thispensa.herokuapp.com', '/eliminaProdottoDispensa'),
             body: json.encode(params),
             headers: {
               "Accept": "application/json",
@@ -575,7 +576,7 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           Map data = jsonDecode(res.body);
           if (!data["errore"]) {
-            MyDispensaState()._onLoading();
+            MyDispensaState().caricaDispense();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

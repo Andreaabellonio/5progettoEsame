@@ -33,10 +33,11 @@ class HttpService {
       List<Post> posts = [];
 
       for (var i = 0; i < lista.length; i++) {
-        String nome = await getProduct1(lista[i]["idProdotto"]);
+        String nome = await getProduct1(lista[i]["barcode"]);
         posts.add(Post(
-            barcode: lista[i]["idProdotto"] as String,
+            barcode: lista[i]["barcode"] as String,
             name: nome,
+            idProdotto:  lista[i]["idProdotto"] as String,
             qta: lista[i]["qta"] as int,
             dataScadenza: DateTime.parse(lista[i]["dataScadenza"])));
       }
@@ -49,10 +50,10 @@ class HttpService {
   Future<Post> nonloso(Map<String, dynamic> json) async {
     String nome;
 
-    await getProduct1(json["idProdotto"]);
+    await getProduct1(json["barcode"]);
 
     return Post(
-        barcode: json['idProdotto'] as String,
+        barcode: json['barcode'] as String,
         name: nome,
         qta: json['qta'] as int);
   }

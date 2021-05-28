@@ -9,16 +9,401 @@ import 'package:Thispensa/styles/colors.dart';
 import 'button_settings/stgButton.dart';
 import 'package:http/http.dart' as http;
 
+class Settings {
+  Widget buildButton(String text, IconData icon) {
+    return Column(
+      children: [
+        ClipOval(
+          child: Material(
+            color: Colori.primario, // button color
+            child: InkWell(
+              splashColor: Colors.red, // inkwell color
+              child: SizedBox(
+                  width: 70,
+                  height: 70,
+                  child: Icon(
+                    icon,
+                    size: 37,
+                  )),
+              onTap: () {},
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 15,
+        ),
+        Text(text),
+      ],
+    );
+  }
+
+  showMenu(context) {
+    showModalBottomSheet(
+        backgroundColor: Colors.transparent,
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(50.0),
+                  topRight: Radius.circular(50.0),
+                ),
+                color: Colori.primario),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Container(
+                  height: 36,
+                ),
+                SizedBox(
+                    height: (415.0),
+                    child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(50.0), //16
+                            topRight: Radius.circular(50.0),
+                          ),
+                          color: Colors.white,
+                        ),
+                        child: Stack(
+                          alignment: Alignment(0, 0),
+                          overflow: Overflow.visible,
+                          children: <Widget>[
+                            Positioned(
+                              top: -36,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(50)),
+                                    border: Border.all(
+                                        color: Colori.primario, width: 10)),
+                                child: Center(
+                                  child: ClipOval(
+                                    /*child: Image.asset(
+                                      "assets/foodPhoto.png",
+                                      fit: BoxFit.contain,
+                                    ),*/
+                                    child: Image.asset(
+                                      "assets/backgroundWhite.png",
+                                      fit: BoxFit.contain,
+                                      height: 36,
+                                      width: 36,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              child: ListView(
+                                physics: NeverScrollableScrollPhysics(),
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.all(28.0),
+                                    child: Column(
+                                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            buildButton(
+                                                "Account", Icons.perm_identity),
+                                            buildButton("Invita la famiglia",
+                                                Icons.supervisor_account),
+                                            buildButton("Privacy", Icons.lock),
+                                          ],
+                                        ),
+                                        SizedBox(height: 28),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            buildButton("Assistenza",
+                                                Icons.help_outline),
+                                            buildButton(
+                                                "Informazioni", Icons.info),
+                                            buildButton(
+                                                "Tema", Icons.color_lens),
+                                          ],
+                                        ),
+                                        SizedBox(height: 40),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            ClipOval(
+                                              child: Material(
+                                                color: Colori
+                                                    .primario, // button color
+                                                child: InkWell(
+                                                  splashColor: Colors
+                                                      .red, // inkwell color
+                                                  child: SizedBox(
+                                                      width: 70,
+                                                      height: 70,
+                                                      child: Icon(
+                                                        Icons.save,
+                                                        size: 37,
+                                                      )),
+                                                  onTap: () async {
+                                                    /*EasyLoading.instance.indicatorType =
+                                                      EasyLoadingIndicatorType.foldingCube;
+                                                  EasyLoading.instance.userInteractions = false;
+                                                  EasyLoading.show();
+                                                  await _signOut();
+                                                  Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (BuildContext context) =>
+                                                              PaginaAutenticazione()));*/
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height: 15,
+                                            ),
+                                            Text("Esci"),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ))),
+              ],
+            ),
+          );
+        });
+  }
+}
+
 //import 'style.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class SettingsPage extends StatefulWidget {
   SettingsPage({Key key}) : super(key: key);
   @override
-  _SettingsPage createState() => _SettingsPage();
+  SettingsStatePage createState() => SettingsStatePage();
 }
 
-class _SettingsPage extends State<SettingsPage> {
+class SettingsStatePage extends State<SettingsPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Settings"),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        elevation: 0,
+        color: Color(0xff344955),
+        child: Container(
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(50)),
+              color: Colori.primario),
+          padding: EdgeInsets.symmetric(horizontal: 10.0),
+          height: 56.0,
+          child: Row(children: <Widget>[
+            IconButton(
+              onPressed: showMenu,
+              icon: Icon(Icons.menu),
+              color: Colors.white,
+            ),
+            Spacer(),
+            IconButton(
+              onPressed: () {},
+              icon: Icon(Icons.add),
+              color: Colors.white,
+            )
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget buildButton(String text, IconData icon) {
+    return Column(
+      children: [
+        ClipOval(
+          child: Material(
+            color: Colori.primario, // button color
+            child: InkWell(
+              splashColor: Colors.red, // inkwell color
+              child: SizedBox(
+                  width: 70,
+                  height: 70,
+                  child: Icon(
+                    icon,
+                    size: 37,
+                  )),
+              onTap: () {},
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 15,
+        ),
+        Text(text),
+      ],
+    );
+  }
+
+  showMenu() {
+    showModalBottomSheet(
+        backgroundColor: Colors.transparent,
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(50.0),
+                  topRight: Radius.circular(50.0),
+                ),
+                color: Colori.primario),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Container(
+                  height: 36,
+                ),
+                SizedBox(
+                    height: (415.0),
+                    child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(50.0), //16
+                            topRight: Radius.circular(50.0),
+                          ),
+                          color: Colors.white,
+                        ),
+                        child: Stack(
+                          alignment: Alignment(0, 0),
+                          overflow: Overflow.visible,
+                          children: <Widget>[
+                            Positioned(
+                              top: -36,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(50)),
+                                    border: Border.all(
+                                        color: Colori.primario, width: 10)),
+                                child: Center(
+                                  child: ClipOval(
+                                    /*child: Image.asset(
+                                      "assets/foodPhoto.png",
+                                      fit: BoxFit.contain,
+                                    ),*/
+                                    child: Image.asset(
+                                      "assets/backgroundWhite.png",
+                                      fit: BoxFit.contain,
+                                      height: 36,
+                                      width: 36,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              child: ListView(
+                                physics: NeverScrollableScrollPhysics(),
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.all(28.0),
+                                    child: Column(
+                                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            buildButton(
+                                                "Account", Icons.perm_identity),
+                                            buildButton("Invita la famiglia",
+                                                Icons.supervisor_account),
+                                            buildButton("Privacy", Icons.lock),
+                                          ],
+                                        ),
+                                        SizedBox(height: 28),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            buildButton("Assistenza",
+                                                Icons.help_outline),
+                                            buildButton(
+                                                "Informazioni", Icons.info),
+                                            buildButton(
+                                                "Tema", Icons.color_lens),
+                                          ],
+                                        ),
+                                        SizedBox(height: 40),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            ClipOval(
+                                              child: Material(
+                                                color: Colori
+                                                    .primario, // button color
+                                                child: InkWell(
+                                                  splashColor: Colors
+                                                      .red, // inkwell color
+                                                  child: SizedBox(
+                                                      width: 70,
+                                                      height: 70,
+                                                      child: Icon(
+                                                        Icons.save,
+                                                        size: 37,
+                                                      )),
+                                                  onTap: () async {
+                                                    /*EasyLoading.instance.indicatorType =
+                                                      EasyLoadingIndicatorType.foldingCube;
+                                                  EasyLoading.instance.userInteractions = false;
+                                                  EasyLoading.show();
+                                                  await _signOut();
+                                                  Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (BuildContext context) =>
+                                                              PaginaAutenticazione()));*/
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height: 15,
+                                            ),
+                                            Text("Esci"),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ))),
+                /*Container(
+                  height: 56,
+                  color: Colori.primario,
+                )*/
+              ],
+            ),
+          );
+        });
+  }
+  /*
 //building buttons
   Widget buildButton(String text, IconData icon, Widget action) {
     return /*Row(
@@ -122,5 +507,5 @@ class _SettingsPage extends State<SettingsPage> {
           MaterialPageRoute(
               builder: (BuildContext context) => PaginaAutenticazione())));
     });
-  }
+  }*/
 }
