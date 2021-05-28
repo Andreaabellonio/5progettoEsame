@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class PaginaAggiuntaProdotto extends StatefulWidget {
+
+  
   String barcode;
   String nomeProdotto;
   String urlImmagine;

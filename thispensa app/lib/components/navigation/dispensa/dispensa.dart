@@ -37,6 +37,7 @@ class MyDispensaState extends State<MyDispensa> {
   PopUpClass pop = new PopUpClass();
   RefreshController _refreshController =
       RefreshController(initialRefresh: false);
+  List<Post> cose;
 
   Widget noElements = Padding(
       padding: const EdgeInsets.only(top: 50.0),
@@ -237,7 +238,7 @@ class MyDispensaState extends State<MyDispensa> {
                       EasyLoading.show();
                       prefs.setString("idDispensa", dispensa.id);
                       prefs.setString("nomeDispensa", dispensa.nome);
-                      List<Post> cose = await httpService.getPosts(dispensa.id);
+                      cose = await httpService.getPosts(dispensa.id);
                       if (cose.length > 0) {
                         setState(() {
                           oggetti2 = cose
@@ -267,7 +268,7 @@ class MyDispensaState extends State<MyDispensa> {
         },
       );
 
-      List<Post> cose = await httpService.getPosts(idDispensa);
+      cose = await httpService.getPosts(idDispensa);
       if (cose.length > 0) {
         setState(() {
           oggetti2 = cose
@@ -429,9 +430,21 @@ class MyDispensaState extends State<MyDispensa> {
 
   void updateSearchQuery(String newQuery) {
     print(newQuery);
-
+    setState(() {
+      oggetti2 = [];
+    });
+///////////////////////////////////////////////////////////////////
+    List<Post> coseFiltrate = cose
+        .where((Post post) =>
+            post.name.toLowerCase().contains(newQuery.toLowerCase()))
+        .toList();
     setState(() {
       searchQuery = newQuery;
+      oggetti2 = coseFiltrate
+          .map(
+            (Post post) => _itemBuilder(post),
+          )
+          .toList();
     });
   }
 
@@ -496,20 +509,24 @@ class _PostTileState extends State<PostTile> {
   final Post post;
   final String postsURL =
       "https://thispensa.herokuapp.com/aggiornaProdottoDispensa";
-
+  TextEditingController controllerNome = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    controllerNome.text = post.name;
     //costruzione item dove inserire il NOME del prodotto
     final nameItem = Container(
       width: 150,
       alignment: Alignment.topLeft,
       margin: const EdgeInsets.only(left: 12.0),
-      child: Text(
-        post.name.toUpperCase(),
+      child: TextField(
+        decoration: InputDecoration(
+          border: InputBorder.none,
+        ),
+        controller: controllerNome,
         style: TextStyle(
           fontSize: 14,
         ),
-        overflow: TextOverflow.fade,
+        //overflow: TextOverflow.fade,
       ),
     );
 
@@ -523,10 +540,19 @@ class _PostTileState extends State<PostTile> {
       itemWidth: 50,
       axis: Axis.horizontal,
       onChanged: (value) async {
+        Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+        final SharedPreferences prefs = await _prefs;
         setState(() => post.qta = value);
+        var params = {
+          "uid": _auth.currentUser.uid.toString(),
+          "tokenJWT": await _auth.currentUser.getIdToken(),
+          "idProdotto": post.idProdotto,
+          "qta": post.qta,
+          "idDispensa": prefs.getString("idDispensa")
+        };
         http.Response res = await http.post(
-            Uri.https('thispensa.herokuapp.com', '/aggiorna'),
-            body: json.encode(post),
+            Uri.https('thispensa.herokuapp.com', '/aggiornaProdottoDispensa'),
+            body: json.encode(params),
             headers: {
               "Accept": "application/json",
               HttpHeaders.contentTypeHeader: "application/json"

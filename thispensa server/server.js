@@ -329,15 +329,7 @@ app.post("/inserisciProdottoDispensa", function (req, res) {
 
 //? Aggiornamento dati relativi ad un prodotto nella dispensa
 app.post("/aggiornaProdottoDispensa", function (req, res) {
-    let dato = {
-        idProdotto: req.body.idProdotto,
-        barcode: req.body.barcode,
-        nome: req.body.nome,
-        dataScadenza: new Date(req.body.dataScadenza),
-        idUtente: req.body.uid,
-        qta: req.body.qta
-    };
-    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $set: dato }, {}, function (data) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectId(req.body.idDispensa), "elementi.idProdotto": mongo.ObjectId(req.body.idProdotto) }, { $set: { "elementi.$.qta": req.body.qta } }, {}, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });
@@ -372,10 +364,9 @@ app.post("/eliminaProdottoDispensa", function (req, res) {
     });
 });
 
-//TODO
 //? aggiornamento nome della dispensa
 app.post("/aggiornaDispensa", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "dispense", { _id: req.body.idDispensa }, { $set: { "dispense.nome": req.body.nomeDispensa } }, {}, function (data) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $set: { nome: req.body.nomeDispensa } }, {}, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });

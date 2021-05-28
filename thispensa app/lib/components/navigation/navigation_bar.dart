@@ -3,9 +3,19 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:Thispensa/components/navigation/dispensa/dispensa.dart';
 import 'package:Thispensa/components/navigation/shopping_list/shoppingList.dart';
 import 'package:Thispensa/styles/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'Settings/menu_settings.dart';
 
-class PaginaVera extends StatelessWidget {
+class temaApp {
+  static ThemeMode tema;
+}
+
+class PaginaVera extends StatefulWidget {
+  @override
+  _PaginaVeraState createState() => _PaginaVeraState();
+}
+
+class _PaginaVeraState extends State<PaginaVera> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -33,7 +43,25 @@ class _MyNavWidgetState extends State<MyNavWidget> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _prefs;
+      String tema = prefs.getString("tema");
+      if (tema != null)
+        switch (tema) {
+          case "sistema":
+            temaApp.tema = ThemeMode.system;
+            break;
+          case "chiaro":
+            temaApp.tema = ThemeMode.light;
+            break;
+          case "scuro":
+            temaApp.tema = ThemeMode.dark;
+            break;
+        }
+      else
+        temaApp.tema = ThemeMode.system;
+
       EasyLoading.dismiss();
     });
   }
@@ -44,10 +72,6 @@ class _MyNavWidgetState extends State<MyNavWidget> {
     ),
     Container(
       child: MyListWidget(),
-    ),
-    Container(
-      child: Settings().showMenu(),
-      //child: SettingsStatePage().showMenu(),
     ),
   ];
 
@@ -72,11 +96,15 @@ class _MyNavWidgetState extends State<MyNavWidget> {
   }
 
   void bottomTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      pageController.animateToPage(index,
-          duration: Duration(milliseconds: 500), curve: Curves.ease);
-    });
+    if (index == 2) {
+      Settings().showMenu(context);
+    } else {
+      setState(() {
+        _selectedIndex = index;
+        pageController.animateToPage(index,
+            duration: Duration(milliseconds: 500), curve: Curves.ease);
+      });
+    }
   }
 
   Widget build(BuildContext context) {
@@ -95,8 +123,8 @@ class _MyNavWidgetState extends State<MyNavWidget> {
                 label: 'Lista',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.account_circle),
-                label: 'Settings',
+                icon: Icon(Icons.settings),
+                label: 'Impostazioni',
               ),
             ],
             currentIndex: _selectedIndex,
