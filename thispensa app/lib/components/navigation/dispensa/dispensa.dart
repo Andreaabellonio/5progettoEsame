@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:Thispensa/components/login/popupDispensa/popupDispensa.dart';
-import 'package:Thispensa/components/navigation/shopping_list/tasks/add_task_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,10 +7,12 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
-import 'package:Thispensa/models/dispensa_model.dart';
-import 'package:Thispensa/models/post_model.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thispensa/components/login/popupDispensa/popupDispensa.dart';
+import 'package:thispensa/components/navigation/shopping_list/tasks/add_task_screen.dart';
+import 'package:thispensa/models/dispensa_model.dart';
+import 'package:thispensa/models/post_model.dart';
 import '../../../styles/colors.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'chiamateServer/http_service.dart';
@@ -27,13 +27,14 @@ class MyDispensa extends StatefulWidget {
 class MyDispensaState extends State<MyDispensa> {
   TextEditingController _searchQueryController = TextEditingController();
   bool _isSearching = false;
-  String searchQuery = "Search query";
+  //String searchQuery = "Search query";
   final HttpService httpService = HttpService();
   String idDispensa;
   String nomeDispensa =
       ""; //carico dinamicamente il nome della dispensa selezionata
   ListView elencoDispense;
-  List<Widget> oggetti2 = [];
+  List<Post> oggetti2 = [];
+  List<Post> oggetti3 = [];
   PopUpClass pop = new PopUpClass();
   RefreshController _refreshController =
       RefreshController(initialRefresh: false);
@@ -52,7 +53,7 @@ class MyDispensaState extends State<MyDispensa> {
     setState(() {
       oggetti2 = []; //CHI TOCCA MUORE: senza questa schifezza non va nulla
     });
-    await caricaDispense();
+    caricaDispense();
     if (mounted) {
       setState(() {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,7 +65,7 @@ class MyDispensaState extends State<MyDispensa> {
 
   void _onLoading() async {
     if (mounted) {
-      await caricaDispense();
+      caricaDispense();
       _refreshController.loadComplete();
     }
   }
@@ -119,14 +120,10 @@ class MyDispensaState extends State<MyDispensa> {
                               await httpService.getPosts(dispensa.id);
                           if (cose.length > 0) {
                             setState(() {
-                              oggetti2 = cose
-                                  .map(
-                                    (Post post) => _itemBuilder(post),
-                                  )
-                                  .toList();
+                              oggetti2 = cose;
                             });
                           } else {
-                            oggetti2 = [noElements];
+                            oggetti2 = [];
                           }
                           setState(() {
                             nomeDispensa = dispensa.nome;
@@ -193,7 +190,7 @@ class MyDispensaState extends State<MyDispensa> {
                                                 //le pulisco così poi al prossimo refresh mi carica la prima dispensa
                                                 prefs.remove("nomeDispensa");
                                                 prefs.remove("idDispensa");
-                                                await onRefresh();
+                                                onRefresh();
                                               } else {
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(
@@ -241,14 +238,10 @@ class MyDispensaState extends State<MyDispensa> {
                       cose = await httpService.getPosts(dispensa.id);
                       if (cose.length > 0) {
                         setState(() {
-                          oggetti2 = cose
-                              .map(
-                                (Post post) => _itemBuilder(post),
-                              )
-                              .toList();
+                          oggetti2 = cose;
                         });
                       } else {
-                        oggetti2 = [Text("Nessun prodotto presente")];
+                        oggetti2 = [];
                       }
                       setState(() {
                         nomeDispensa = dispensa.nome;
@@ -271,14 +264,10 @@ class MyDispensaState extends State<MyDispensa> {
       cose = await httpService.getPosts(idDispensa);
       if (cose.length > 0) {
         setState(() {
-          oggetti2 = cose
-              .map(
-                (Post post) => _itemBuilder(post),
-              )
-              .toList();
+          oggetti2 = cose;
         });
       } else {
-        oggetti2 = [noElements];
+        oggetti2 = [];
       }
       setState(() {
         idDispensa = dispense[0].id;
@@ -343,40 +332,48 @@ class MyDispensaState extends State<MyDispensa> {
           ],
         ),
       ),
-      body: SmartRefresher(
-        enablePullDown: true,
-        header: MaterialClassicHeader(color: Colori.primario),
-        footer: CustomFooter(
-          builder: (BuildContext context, LoadStatus mode) {
-            Widget body;
-            if (mode == LoadStatus.idle) {
-              body = Text("pull up load");
-            } else if (mode == LoadStatus.loading) {
-              body = CupertinoActivityIndicator();
-            } else if (mode == LoadStatus.failed) {
-              body = Text("Load Failed!Click retry!");
-            } else if (mode == LoadStatus.canLoading) {
-              body = Text("release to load more");
-            } else {
-              body = Text("No more Data");
-            }
-            return Container(
-              height: 55.0,
-              child: Center(child: body),
-            );
-          },
-        ),
-        controller: _refreshController,
-        onRefresh: onRefresh,
-        onLoading: _onLoading,
-        child: new ListView.builder(
-          itemCount: oggetti2.length,
-          itemBuilder: (BuildContext context, int index) {
-            print(oggetti2[index]);
-            return oggetti2[index];
-          },
-        ),
-      ),
+      body: (!_isSearching)
+          ? SmartRefresher(
+              enablePullDown: true,
+              header: MaterialClassicHeader(color: Colori.primario),
+              footer: CustomFooter(
+                builder: (BuildContext context, LoadStatus mode) {
+                  Widget body;
+                  if (mode == LoadStatus.idle) {
+                    body = Text("pull up load");
+                  } else if (mode == LoadStatus.loading) {
+                    body = CupertinoActivityIndicator();
+                  } else if (mode == LoadStatus.failed) {
+                    body = Text("Load Failed!Click retry!");
+                  } else if (mode == LoadStatus.canLoading) {
+                    body = Text("release to load more");
+                  } else {
+                    body = Text("No more Data");
+                  }
+                  return Container(
+                    height: 55.0,
+                    child: Center(child: body),
+                  );
+                },
+              ),
+              controller: _refreshController,
+              onRefresh: onRefresh,
+              onLoading: _onLoading,
+              child: ListView.builder(
+                itemCount: oggetti2.length,
+                itemBuilder: (BuildContext context, int index) {
+                  print(oggetti2[index].name);
+                  return _itemBuilder(oggetti2[index]);
+                },
+              ),
+            )
+          : ListView.builder(
+              itemCount: oggetti3.length,
+              itemBuilder: (BuildContext context, int index) {
+                print(oggetti3[index].name);
+                return _itemBuilder(oggetti3[index]);
+              },
+            ),
     );
   }
 
@@ -425,26 +422,18 @@ class MyDispensaState extends State<MyDispensa> {
 
     setState(() {
       _isSearching = true;
+      oggetti3 = [];
     });
   }
 
   void updateSearchQuery(String newQuery) {
-    print(newQuery);
-    setState(() {
-      oggetti2 = [];
-    });
-///////////////////////////////////////////////////////////////////
     List<Post> coseFiltrate = cose
         .where((Post post) =>
             post.name.toLowerCase().contains(newQuery.toLowerCase()))
         .toList();
     setState(() {
-      searchQuery = newQuery;
-      oggetti2 = coseFiltrate
-          .map(
-            (Post post) => _itemBuilder(post),
-          )
-          .toList();
+      //searchQuery = newQuery;
+      oggetti3 = coseFiltrate;
     });
   }
 
@@ -493,26 +482,22 @@ class TileOverlay extends StatelessWidget {
 }
 
 class PostTile extends StatefulWidget {
-  PostTile({this.post});
-
   final Post post;
+  const PostTile({Key key, this.post}) : super(key: key);
   @override
-  _PostTileState createState() => new _PostTileState(post: post);
+  _PostTileState createState() => new _PostTileState();
 }
 
 //----------------------------------------------------------------------------------------//
 
 class _PostTileState extends State<PostTile> {
-  _PostTileState({
-    this.post,
-  }); //!default value, parametri tra {} vuol dire che sono opzionali
-  final Post post;
   final String postsURL =
       "https://thispensa.herokuapp.com/aggiornaProdottoDispensa";
   TextEditingController controllerNome = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    controllerNome.text = post.name;
+    print("we" + widget.post.name);
+    controllerNome.text = widget.post.name;
     //costruzione item dove inserire il NOME del prodotto
     final nameItem = Container(
       width: 150,
@@ -532,7 +517,7 @@ class _PostTileState extends State<PostTile> {
 
     final numberPicker = NumberPicker(
       textStyle: TextStyle(fontSize: 12),
-      value: post.qta,
+      value: widget.post.qta,
       minValue: 0,
       maxValue: 100,
       step: 1,
@@ -542,12 +527,12 @@ class _PostTileState extends State<PostTile> {
       onChanged: (value) async {
         Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
         final SharedPreferences prefs = await _prefs;
-        setState(() => post.qta = value);
+        setState(() => widget.post.qta = value);
         var params = {
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
-          "idProdotto": post.idProdotto,
-          "qta": post.qta,
+          "idProdotto": widget.post.idProdotto,
+          "qta": widget.post.qta,
           "idDispensa": prefs.getString("idDispensa")
         };
         http.Response res = await http.post(
@@ -586,8 +571,8 @@ class _PostTileState extends State<PostTile> {
         Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
         final SharedPreferences prefs = await _prefs;
         var params = {
-          "idProdotto": post.idProdotto,
-          "barcode": post.barcode,
+          "idProdotto": widget.post.idProdotto,
+          "barcode": widget.post.barcode,
           "idDispensa": prefs.getString("idDispensa"),
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:Thispensa/components/navigation/dispensa/dispensa.dart';
-import 'package:Thispensa/components/navigation/shopping_list/shoppingList.dart';
-import 'package:Thispensa/styles/colors.dart';
+import 'package:thispensa/components/navigation/dispensa/dispensa.dart';
+import 'package:thispensa/components/navigation/shopping_list/shoppingList.dart';
+import 'package:thispensa/styles/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Settings/menu_settings.dart';
 

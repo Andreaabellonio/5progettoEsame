@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:Thispensa/components/productWidgets/datePicker.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:Thispensa/components/productWidgets/flutterMobileVision.dart';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thispensa/components/productWidgets/datePicker.dart';
+import 'package:thispensa/components/productWidgets/flutterMobileVision.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 

@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
-import 'package:Thispensa/styles/colors.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thispensa/styles/colors.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -148,6 +148,25 @@ class PopUpClass {
                                           ),
                                         );
                                         await callback();
+                                      } else if (data["messaggio"] != null) {
+                                        EasyLoading.dismiss();
+                                        showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                            title:
+                                                const Text('Attenzione'),
+                                            content: const Text(
+                                                'E\' già prensete una dispensa con questo nome, sceglierne un\'altro!'),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, 'OK'),
+                                                child: const Text('OK'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
                                       } else {
                                         EasyLoading.dismiss();
                                         Navigator.pop(context);

@@ -289,10 +289,16 @@ app.post("/eliminaProdotto", function (req, res) {
 
 //? creazione della dispensa
 app.post("/creaDispensa", function (req, res) {
-    mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
-        mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
-        });
+    mongoFunctions.find(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, creatore: req.body.uid }, {}, function (data) {
+        if (data.length == 0)
+            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
+                mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
+                    res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
+                });
+            });
+        else {
+            res.send(JSON.stringify({ errore: true, messaggio: "Inserire un nome diverso, la dispensa è già presente!" }));
+        }
     });
 });
 

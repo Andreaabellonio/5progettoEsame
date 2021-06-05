@@ -6,7 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Thispensa/components/login/autenticazione.dart';
+import 'package:thispensa/components/login/autenticazione.dart';
 import '../../../../../styles/colors.dart';
 //import 'package:flutter_image_ppicker/home_screen.dart';
 //file puntatori al'origine'

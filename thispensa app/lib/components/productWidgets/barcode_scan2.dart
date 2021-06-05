@@ -1,5 +1,5 @@
-import 'package:Thispensa/components/navigation/dispensa/paginaAggiuntaProdotto.dart';
-import 'package:Thispensa/styles/colors.dart';
+import 'package:thispensa/components/navigation/dispensa/paginaAggiuntaProdotto.dart';
+import 'package:thispensa/styles/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
@@ -123,7 +123,7 @@ class _BarcodeState extends State<Barcode> {
     }
     if (!mounted) return;
     print(barcodeScanRes);
-    if (barcodeScanRes != "-1") await _letturaDati(barcodeScanRes);
+    if (barcodeScanRes != "-1") _letturaDati(barcodeScanRes);
   }
 
   @override

@@ -10,7 +10,6 @@ class MobileVision extends StatefulWidget {
 }
 
 class _MobileVisionState extends State<MobileVision> {
-
   Future<Null> _read() async {
     print("sciao beo");
     List<OcrText> texts = [];
@@ -26,7 +25,7 @@ class _MobileVisionState extends State<MobileVision> {
         fps: 2.0,
       );
     } on Exception {
-      texts.add(OcrText('Failed to recognize text.'));
+      texts.add(widget.callback('Failed to recognize text.'));
     }
 
     if (!mounted) return;
@@ -36,58 +35,55 @@ class _MobileVisionState extends State<MobileVision> {
     //?L'obiettivo è formattare tutte i tipi di date to AAAAMMGG
     /*
     var listaReg = [
-      "^([0-1][0-9]) [0-9]{4}\$", //MM AAAA
-      "^([0-1][0-9])-[0-9]{4}\$", //MM-AAAA
-      "^(([0-9]|[0-3][0-9])\/([0-1][0-9])\/[0-9]{2,4})\$", //GG/MM/AAAA anche con AA
-      "^(([0-9]|[0-3][0-9])\.([0-1][0-9])\.[0-9]{4})\$", //GG.MM.AAAA
-      "^([0-3][0-9] ([0-1][0-9]) [0-9]{2,4})\$", //GG MM AAAA anche AA
-      "^([0-9]{2,4} ([0-1][0-9]) [0-3][0-9])\$" //AAAA MM GG anche AA
+      "([0-1][0-9]) [0-9]{4}", //MM AAAA
+      "([0-1][0-9])-[0-9]{4}", //MM-AAAA
+      "(([0-9]|[0-3][0-9])\/([0-1][0-9])\/[0-9]{2,4})", //GG/MM/AAAA anche con AA
+      "(([0-9]|[0-3][0-9])\.([0-1][0-9])\.[0-9]{4})", //GG.MM.AAAA
+      "([0-3][0-9] ([0-1][0-9]) [0-9]{2,4})", //GG MM AAAA anche AA
+      "([0-9]{2,4} ([0-1][0-9]) [0-3][0-9])" //AAAA MM GG anche AA
     ];
     */
     for (OcrText t in texts) {
-      RegExpMatch exp =
-          RegExp("^([0-1][0-9]) [0-9]{4}\$").firstMatch(t.value);
+      RegExpMatch exp = RegExp(r"(([0-9]|[0-3][0-9])\/([0-1][0-9])\/[0-9]{2,4})")
+          .firstMatch(t.value);
       if (exp != null) {
-        app = t.value;
+        app = t.value.substring(exp.start, exp.end);
+        testo = app.split('/')[2] + app.split('/')[1] + app.split('/')[0];
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp(r"(([0-9]|[0-3][0-9])\.([0-1][0-9])\.[0-9]{4})")
+          .firstMatch(t.value.toString());
+      if (exp != null) {
+        app = t.value.substring(exp.start, exp.end);
+        testo = app.split('.')[2] + app.split('.')[1] + app.split('.')[0];
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp(r"([0-3][0-9] ([0-1][0-9]) [0-9]{2,4})").firstMatch(t.value);
+      if (exp != null) {
+        app = t.value.substring(exp.start, exp.end);
+        testo = app.split(' ')[2] + app.split(' ')[1] + app.split(' ')[0];
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp(r"([0-9]{2,4} ([0-1][0-9]) [0-3][0-9])").firstMatch(t.value);
+      if (exp != null) {
+        app = t.value.substring(exp.start, exp.end);
+        testo = app.replaceAll(' ', '');
+        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
+      }
+      exp = RegExp(r"([0-1][0-9]) [0-9]{4}").firstMatch(t.value);
+      if (exp != null) {
+        app = t.value.substring(exp.start, exp.end);
         testo = app.split(' ')[1] +
             app.split(' ')[0] +
             "01"; //metto il primo giorno del mese
         break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
       }
-      exp = RegExp("^([0-1][0-9])-[0-9]{4}\$").firstMatch(t.value);
+      exp = RegExp(r"([0-1][0-9])-[0-9]{4}").firstMatch(t.value);
       if (exp != null) {
-        app = t.value;
+        app = t.value.substring(exp.start, exp.end);
         testo = app.split('-')[1] +
             app.split('-')[0] +
             "01"; //metto il primo giorno del mese
-        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
-      }
-      exp = RegExp("^(([0-9]|[0-3][0-9])\/([0-1][0-9])\/[0-9]{2,4})\$")
-          .firstMatch(t.value);
-      if (exp != null) {
-        app = t.value;
-        testo = app.split('/')[2] + app.split('/')[1] + app.split('/')[0];
-        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
-      }
-      exp = RegExp("^(([0-9]|[0-3][0-9])\.([0-1][0-9])\.[0-9]{4})\$")
-          .firstMatch(t.value);
-      if (exp != null) {
-        app = t.value;
-        testo = app.split('.')[2] + app.split('.')[1] + app.split('.')[0];
-        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
-      }
-      exp = RegExp("^([0-3][0-9] ([0-1][0-9]) [0-9]{2,4})\$")
-          .firstMatch(t.value);
-      if (exp != null) {
-        app = t.value;
-        testo = app.split(' ')[2] + app.split(' ')[1] + app.split(' ')[0];
-        break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
-      }
-      exp = RegExp("^([0-9]{2,4} ([0-1][0-9]) [0-3][0-9])\$")
-          .firstMatch(t.value);
-      if (exp != null) {
-        app = t.value;
-        testo = app.replaceAll(' ', '');
         break; //ottimizzazzione level 9000(questo Barbero non deve vederlo)
       }
     }
@@ -104,12 +100,6 @@ class _MobileVisionState extends State<MobileVision> {
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return TextButton(onPressed: _read, child: Text("scegli data"));
   }
 }

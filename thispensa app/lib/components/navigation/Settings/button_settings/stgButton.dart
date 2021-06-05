@@ -1,4 +1,4 @@
-import 'package:Thispensa/components/navigation/navigation_bar.dart';
+import 'package:thispensa/components/navigation/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info/package_info.dart';
@@ -7,7 +7,6 @@ import 'dart:io' show Platform;
 import 'sheets/_Help.dart';
 import 'sheets/_Privacy.dart';
 import 'sheets/_Account.dart';
-import 'sheets/_Info.dart';
 
 class Account extends StatefulWidget {
   const Account({Key key}) : super(key: key);
