@@ -11,7 +11,6 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thispensa/components/login/popupDispensa/popupDispensa.dart';
-import 'package:thispensa/components/navigation/dispensa/widgetTexField.dart';
 import 'package:thispensa/components/navigation/shopping_list/tasks/add_task_screen.dart';
 import 'package:thispensa/models/dispensa_model.dart';
 import 'package:thispensa/models/post_model.dart';
@@ -31,8 +30,9 @@ class MyDispensaState extends State<MyDispensa> {
   bool _isSearching = false;
   final HttpService httpService = HttpService();
   String idDispensa;
-  String nomeDispensa =
-      ""; //carico dinamicamente il nome della dispensa selezionata
+  String creatoreDispensa;
+  TextEditingController nomeDispensa = TextEditingController();
+  //carico dinamicamente il nome della dispensa selezionata
   ListView elencoDispense;
   List<Post> oggetti2 = [];
   PopUpClass pop = new PopUpClass();
@@ -63,17 +63,17 @@ class MyDispensaState extends State<MyDispensa> {
     }
   }
 
-  void onLoading() async {
+  void _onLoading() async {
     if (mounted) {
       caricaDispense();
       _refreshController.loadComplete();
     }
-    super.dispose();
   }
 
   @override
   void initState() {
     pop.callback = onRefresh;
+    nomeDispensa.text = "";
     onRefresh();
     super.initState();
   }
@@ -94,10 +94,11 @@ class MyDispensaState extends State<MyDispensa> {
 
       Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
       final SharedPreferences prefs = await _prefs;
-      nomeDispensa = prefs.getString("nomeDispensa");
+      nomeDispensa.text = prefs.getString("nomeDispensa");
       idDispensa = prefs.getString("idDispensa");
-      if (nomeDispensa == null || idDispensa == null) {
-        nomeDispensa = dispense[0].nome;
+      creatoreDispensa = prefs.getString("creatoreDispensa");
+      if (nomeDispensa.text == null || idDispensa == null) {
+        nomeDispensa.text = dispense[0].nome;
         idDispensa = dispense[0].id;
       }
 
@@ -109,8 +110,7 @@ class MyDispensaState extends State<MyDispensa> {
                     actionExtentRatio: 0.20,
                     child: ListTile(
                         leading: Icon(Icons.text_snippet),
-                        title: TextFieldLongPress(
-                            nome: dispensa.nome, idDispensa: dispensa.id),
+                        title: Text(dispensa.nome),
                         onTap: () async {
                           EasyLoading.instance.indicatorType =
                               EasyLoadingIndicatorType.foldingCube;
@@ -118,6 +118,8 @@ class MyDispensaState extends State<MyDispensa> {
                           EasyLoading.show();
                           prefs.setString("idDispensa", dispensa.id);
                           prefs.setString("nomeDispensa", dispensa.nome);
+                          prefs.setString(
+                              "creatoreDispensa", dispensa.creatore);
                           List<Post> cose =
                               await httpService.getPosts(dispensa.id);
                           if (cose.length > 0) {
@@ -128,7 +130,7 @@ class MyDispensaState extends State<MyDispensa> {
                             oggetti2 = [];
                           }
                           setState(() {
-                            nomeDispensa = dispensa.nome;
+                            nomeDispensa.text = dispensa.nome;
                             idDispensa = dispensa.id;
                           });
                           Navigator.pop(context);
@@ -230,6 +232,24 @@ class MyDispensaState extends State<MyDispensa> {
                         color: Colors.indigo,
                         icon: Icons.share,
                         onTap: () async {
+                          var params = {
+                            "uid": _auth.currentUser.uid.toString(),
+                            "tokenJWT": await _auth.currentUser.getIdToken()
+                          };
+                          http.post(
+                              Uri.https('thispensa.herokuapp.com',
+                                  '/modificaCondivisioneDispensa'),
+                              body: json.encode(params),
+                              headers: {
+                                "Accept": "application/json",
+                                "withCredential": "true",
+                                HttpHeaders.contentTypeHeader:
+                                    "application/json"
+                              }).then((response) async {
+                            Map data = jsonDecode(response.body);
+                            if (!data["errore"]) {
+                            } else {}
+                          });
                           await showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -245,7 +265,6 @@ class MyDispensaState extends State<MyDispensa> {
                     ],
                   )
                 : ListTile(
-                    //? caso che l'utente non è proprietario della dispensa(non c'è slidable e modifica nome)
                     leading: Icon(Icons.text_snippet),
                     title: Text(dispensa.nome),
                     onTap: () async {
@@ -255,6 +274,7 @@ class MyDispensaState extends State<MyDispensa> {
                       EasyLoading.show();
                       prefs.setString("idDispensa", dispensa.id);
                       prefs.setString("nomeDispensa", dispensa.nome);
+                      prefs.setString("creatoreDispensa", dispensa.creatore);
                       cose = await httpService.getPosts(dispensa.id);
                       if (cose.length > 0) {
                         setState(() {
@@ -264,7 +284,7 @@ class MyDispensaState extends State<MyDispensa> {
                         oggetti2 = [];
                       }
                       setState(() {
-                        nomeDispensa = dispensa.nome;
+                        nomeDispensa.text = dispensa.nome;
                         idDispensa = dispensa.id;
                       });
                       Navigator.pop(context);
@@ -308,7 +328,62 @@ class MyDispensaState extends State<MyDispensa> {
                         Scaffold.of(context).openDrawer();
                       },
                       icon: Icon(Icons.menu)))),
-          title: _isSearching ? _buildSearchField() : Text(nomeDispensa),
+          title: _isSearching
+              ? _buildSearchField()
+              : TextField(
+                  enabled: (_auth.currentUser.uid == creatoreDispensa),
+                  controller: nomeDispensa,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  onSubmitted: (String valore) async {
+                    EasyLoading.instance.indicatorType =
+                        EasyLoadingIndicatorType.foldingCube;
+                    EasyLoading.instance.userInteractions = false;
+                    EasyLoading.show();
+                    Future<SharedPreferences> _prefs =
+                        SharedPreferences.getInstance();
+                    final SharedPreferences prefs = await _prefs;
+                    var params = {
+                      "nomeDispensa": nomeDispensa.text,
+                      "idDispensa": prefs.getString("idDispensa"),
+                      "uid": _auth.currentUser.uid.toString(),
+                      "tokenJWT": await _auth.currentUser.getIdToken(),
+                    };
+                    http.Response res = await http.post(
+                        Uri.https(
+                            'thispensa.herokuapp.com', '/aggiornaDispensa'),
+                        body: json.encode(params),
+                        headers: {
+                          "Accept": "application/json",
+                          HttpHeaders.contentTypeHeader: "application/json"
+                        });
+                    if (res.statusCode == 200) {
+                      Map data = jsonDecode(res.body);
+                      if (!data["errore"]) {
+                        prefs.setString("nomeDispensa", valore);
+                        await onRefresh();
+                        EasyLoading.dismiss();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Nome aggiornato con successo!"),
+                          ),
+                        );
+                      } else {
+                        EasyLoading.dismiss();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text("Errore durante l'aggiornamento!"),
+                          ),
+                        );
+                      }
+                    } else {
+                      throw "Unable change pantry nome.";
+                    }
+                  },
+                ),
           actions: _buildActions(),
         ),
         floatingActionButton: FloatingActionButton(
@@ -377,7 +452,7 @@ class MyDispensaState extends State<MyDispensa> {
           ),
           controller: _refreshController,
           onRefresh: onRefresh,
-          onLoading: onLoading,
+          onLoading: _onLoading,
           child: ListView.builder(
             itemCount: oggetti2.length,
             itemBuilder: (BuildContext context, int index) {
@@ -537,7 +612,7 @@ class _PostTileState extends State<PostTile> {
     if (res.statusCode == 200) {
       Map data = jsonDecode(res.body);
       if (!data["errore"]) {
-        MyDispensaState().onRefresh();
+        print("asda");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Nome aggiornato con successo!"),
@@ -593,14 +668,12 @@ class _PostTileState extends State<PostTile> {
                       focus.requestFocus();
                     },
                     onTap: () {
-                      focus.unfocus();
-                      aggiornaNomeProdotto(controllerNome.text);
+                      //TODO APRIRE PAGINA PRODOTTO
                     },
                   ),
                 ),
               ],
             )));
-
     final numberPicker = NumberPicker(
       textStyle: TextStyle(fontSize: 12),
       value: widget.post.qta,
@@ -632,12 +705,7 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           Map data = jsonDecode(res.body);
           if (!data["errore"]) {
-            MyDispensaState().onRefresh();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Quantità aggiornata con successo!"),
-              ),
-            );
+            MyDispensaState()._onLoading();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -664,6 +732,7 @@ class _PostTileState extends State<PostTile> {
         final SharedPreferences prefs = await _prefs;
         var params = {
           "idProdotto": widget.post.idProdotto,
+          "barcode": widget.post.barcode,
           "idDispensa": prefs.getString("idDispensa"),
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
@@ -678,12 +747,7 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           Map data = jsonDecode(res.body);
           if (!data["errore"]) {
-            MyDispensaState().onRefresh();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Prodotto eliminato con successo!"),
-              ),
-            );
+            MyDispensaState().caricaDispense();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
