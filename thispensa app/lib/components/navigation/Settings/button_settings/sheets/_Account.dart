@@ -135,18 +135,19 @@ class AccountState extends State<Account> {
                             return null;
                           },
                         ),
-                        TextField(
+                        TextFormField(
+                          initialValue: _auth.currentUser.email,
+                          enabled: false,
                           readOnly: true,
+                          style: TextStyle(
+                            color: Colors.black,
+                          ),
                           decoration: InputDecoration(
-                            hintText: _auth.currentUser.email,
-                            suffixIcon: Padding(
-                              padding: EdgeInsets.only(top: 20),
-                              child: Text(
-                                'Email',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                ),
-                              ),
+                            disabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.black38)),
+                            labelText: 'Email',
+                            labelStyle: TextStyle(
+                              color: Colors.black54,
                             ),
                           ),
                         ),

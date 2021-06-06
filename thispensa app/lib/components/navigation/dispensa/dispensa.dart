@@ -11,7 +11,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thispensa/components/login/popupDispensa/popupDispensa.dart';
-import 'package:thispensa/components/navigation/shopping_list/tasks/add_task_screen.dart';
+import 'package:thispensa/components/navigation/dispensa/paginaAggiuntaProdotto.dart';
 import 'package:thispensa/models/dispensa_model.dart';
 import 'package:thispensa/models/post_model.dart';
 import '../../../styles/colors.dart';
@@ -36,7 +36,7 @@ class MyDispensaState extends State<MyDispensa> {
   ListView elencoDispense;
   List<Post> oggetti2 = [];
   PopUpClass pop = new PopUpClass();
-  RefreshController _refreshController =
+  RefreshController refreshController =
       RefreshController(initialRefresh: false);
   List<Post> cose;
 
@@ -57,7 +57,7 @@ class MyDispensaState extends State<MyDispensa> {
     if (mounted) {
       setState(() {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _refreshController.refreshCompleted();
+          refreshController.refreshCompleted();
         });
       });
     }
@@ -66,7 +66,7 @@ class MyDispensaState extends State<MyDispensa> {
   void _onLoading() async {
     if (mounted) {
       caricaDispense();
-      _refreshController.loadComplete();
+      refreshController.loadComplete();
     }
   }
 
@@ -389,8 +389,17 @@ class MyDispensaState extends State<MyDispensa> {
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colori.primario,
           child: Icon(Icons.add),
-          onPressed: () => Navigator.push(context,
-              MaterialPageRoute(builder: (context) => AddTaskScreen())),
+          onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => PaginaAggiuntaProdotto(
+                      nomeProdotto: "",
+                      barcode: "",
+                      urlImmagine: "",
+                      nutriScore: "Non disponibile per questo prodotto",
+                      calorie: "",
+                      tracce: ["Non disponibile per questo prodotto"],
+                      refresh: onRefresh))),
         ),
         drawer: Drawer(
           child: Column(
@@ -450,7 +459,7 @@ class MyDispensaState extends State<MyDispensa> {
               );
             },
           ),
-          controller: _refreshController,
+          controller: refreshController,
           onRefresh: onRefresh,
           onLoading: _onLoading,
           child: ListView.builder(
@@ -539,7 +548,7 @@ class MyDispensaState extends State<MyDispensa> {
     return Container(
       child: Stack(
         children: [
-          TileOverlay(post),
+          TileOverlay(post, onRefresh),
         ],
       ),
     );
@@ -548,7 +557,8 @@ class MyDispensaState extends State<MyDispensa> {
 
 class TileOverlay extends StatelessWidget {
   final Post post;
-  TileOverlay(this.post);
+  final callback;
+  TileOverlay(this.post, void this.callback);
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -557,7 +567,7 @@ class TileOverlay extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          child: Container(child: PostTile(post: post)),
+          child: Container(child: PostTile(post: post, refresh: this.callback)),
         )
       ],
     );
@@ -566,7 +576,8 @@ class TileOverlay extends StatelessWidget {
 
 class PostTile extends StatefulWidget {
   final Post post;
-  const PostTile({Key key, this.post}) : super(key: key);
+  final _callback;
+  const PostTile({Key key, this.post, void refresh()}) : _callback = refresh;
   @override
   _PostTileState createState() => new _PostTileState();
 }
@@ -592,6 +603,9 @@ class _PostTileState extends State<PostTile> {
   }
 
   Future<void> aggiornaNomeProdotto(String nome) async {
+    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
+    EasyLoading.instance.userInteractions = false;
+    EasyLoading.show();
     Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
     final SharedPreferences prefs = await _prefs;
     var params = {
@@ -612,7 +626,6 @@ class _PostTileState extends State<PostTile> {
     if (res.statusCode == 200) {
       Map data = jsonDecode(res.body);
       if (!data["errore"]) {
-        print("asda");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Nome aggiornato con successo!"),
@@ -629,6 +642,7 @@ class _PostTileState extends State<PostTile> {
     } else {
       throw "Unable change product nome.";
     }
+    EasyLoading.dismiss();
   }
 
   @override
@@ -677,13 +691,17 @@ class _PostTileState extends State<PostTile> {
     final numberPicker = NumberPicker(
       textStyle: TextStyle(fontSize: 12),
       value: widget.post.qta,
-      minValue: 0,
+      minValue: 1,
       maxValue: 100,
       step: 1,
       itemHeight: 50,
       itemWidth: 50,
       axis: Axis.horizontal,
       onChanged: (value) async {
+        EasyLoading.instance.indicatorType =
+            EasyLoadingIndicatorType.foldingCube;
+        EasyLoading.instance.userInteractions = false;
+        EasyLoading.show();
         Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
         final SharedPreferences prefs = await _prefs;
         setState(() => widget.post.qta = value);
@@ -705,7 +723,9 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           Map data = jsonDecode(res.body);
           if (!data["errore"]) {
-            MyDispensaState()._onLoading();
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Quantità aggiornata con successo!'),
+            ));
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -715,6 +735,7 @@ class _PostTileState extends State<PostTile> {
             );
           }
         }
+        EasyLoading.dismiss();
       },
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -728,6 +749,10 @@ class _PostTileState extends State<PostTile> {
       color: Colori.scuro,
       iconSize: 35,
       onPressed: () async {
+        EasyLoading.instance.indicatorType =
+            EasyLoadingIndicatorType.foldingCube;
+        EasyLoading.instance.userInteractions = false;
+        EasyLoading.show();
         Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
         final SharedPreferences prefs = await _prefs;
         var params = {
@@ -747,7 +772,10 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           Map data = jsonDecode(res.body);
           if (!data["errore"]) {
-            MyDispensaState().caricaDispense();
+            widget._callback();
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Prodotto eliminato con successo'),
+            ));
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -759,6 +787,7 @@ class _PostTileState extends State<PostTile> {
         } else {
           throw "Unable to retrieve posts.";
         }
+        EasyLoading.dismiss();
       },
     );
 

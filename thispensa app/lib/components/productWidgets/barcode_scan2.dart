@@ -8,7 +8,8 @@ import 'package:translator/translator.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 
 class Barcode extends StatefulWidget {
-  Barcode({Key key}) : super(key: key);
+  final callback;
+  Barcode(this.callback, {Key key}) : super(key: key);
 
   @override
   _BarcodeState createState() => _BarcodeState();
@@ -34,8 +35,7 @@ class _BarcodeState extends State<Barcode> {
       ProductResult result = await OpenFoodAPIClient.getProduct(configuration);
 
       if (result.status == 1) {
-        String nome =
-            await traduci(result.product.productName, result.product.lang);
+        String nome = result.product.productName;
         String urlImg = result.product.imageFrontSmallUrl == null
             ? "Non disponibile per questo prodotto"
             : result.product.imageFrontSmallUrl;
@@ -79,10 +79,17 @@ class _BarcodeState extends State<Barcode> {
             ? "Non disponibile per questo prodotto"
             : result.product.quantity.toString();
         EasyLoading.dismiss();
-        Navigator.of(context).push(
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => PaginaAggiuntaProdotto(barcode, nome, urlImg,
-                calorie, nutriScore, tracceTradotte),
+            builder: (context) => PaginaAggiuntaProdotto(
+              barcode: barcode,
+              nomeProdotto: nome,
+              urlImmagine: urlImg,
+              calorie: calorie,
+              nutriScore: nutriScore,
+              tracce: tracceTradotte,
+              refresh: widget.callback,
+            ),
           ),
         );
       } else {

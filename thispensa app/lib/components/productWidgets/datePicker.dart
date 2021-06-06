@@ -13,31 +13,33 @@ class _DatePickerState extends State<DatePicker> {
   TextEditingController dateController = TextEditingController();
 
   @override
-  void dispose() {
-    // Clean up the controller when the widget is removed
-    dateController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     dateController = widget.data;
     return new Center(
+      child: Container(
+        width: MediaQuery.of(context).size.width - 152,
         child: TextField(
-      readOnly: true,
-      controller: dateController,
-      decoration: InputDecoration(hintText: 'Pick your Date'),
-      onTap: () async {
-        var date = await showDatePicker(
-            context: context,
-            initialDate: dateController.text == ""
-                ? DateTime.now()
-                : DateTime.parse(dateController.text),
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100));
-        dateController.text = date.toLocal().toString().split(' ')[0];
-        widget.callback(dateController);
-      },
-    ));
+          readOnly: true,
+          controller: dateController,
+          decoration: InputDecoration(
+            hintText: 'Data di scadenza',
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+          ),
+          onTap: () async {
+            var date = await showDatePicker(
+                context: context,
+                initialDate: dateController.text == ""
+                    ? DateTime.now()
+                    : DateTime.parse(dateController.text),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100));
+            dateController.text =
+                (date != '') ? date.toLocal().toString().split(' ')[0] : "";
+            widget.callback(dateController);
+          },
+        ),
+      ),
+    );
   }
 }
