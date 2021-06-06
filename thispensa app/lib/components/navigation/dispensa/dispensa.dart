@@ -8,8 +8,10 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thispensa/components/login/popupDispensa/popupDispensa.dart';
+import 'package:thispensa/components/navigation/dispensa/widgetTexField.dart';
 import 'package:thispensa/components/navigation/shopping_list/tasks/add_task_screen.dart';
 import 'package:thispensa/models/dispensa_model.dart';
 import 'package:thispensa/models/post_model.dart';
@@ -61,11 +63,12 @@ class MyDispensaState extends State<MyDispensa> {
     }
   }
 
-  void _onLoading() async {
+  void onLoading() async {
     if (mounted) {
       caricaDispense();
       _refreshController.loadComplete();
     }
+    super.dispose();
   }
 
   @override
@@ -106,7 +109,8 @@ class MyDispensaState extends State<MyDispensa> {
                     actionExtentRatio: 0.20,
                     child: ListTile(
                         leading: Icon(Icons.text_snippet),
-                        title: Text(dispensa.nome),
+                        title: TextFieldLongPress(
+                            nome: dispensa.nome, idDispensa: dispensa.id),
                         onTap: () async {
                           EasyLoading.instance.indicatorType =
                               EasyLoadingIndicatorType.foldingCube;
@@ -220,10 +224,28 @@ class MyDispensaState extends State<MyDispensa> {
                                     ],
                                   ));
                         },
-                      )
+                      ),
+                      IconSlideAction(
+                        caption: 'Condividi',
+                        color: Colors.indigo,
+                        icon: Icons.share,
+                        onTap: () async {
+                          await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return Dialog(
+                                  child: QrImage(
+                                      data: dispensa.id,
+                                      version: QrVersions.auto,
+                                      size: 320),
+                                );
+                              });
+                        },
+                      ),
                     ],
                   )
                 : ListTile(
+                    //? caso che l'utente non è proprietario della dispensa(non c'è slidable e modifica nome)
                     leading: Icon(Icons.text_snippet),
                     title: Text(dispensa.nome),
                     onTap: () async {
@@ -355,7 +377,7 @@ class MyDispensaState extends State<MyDispensa> {
           ),
           controller: _refreshController,
           onRefresh: onRefresh,
-          onLoading: _onLoading,
+          onLoading: onLoading,
           child: ListView.builder(
             itemCount: oggetti2.length,
             itemBuilder: (BuildContext context, int index) {
@@ -480,25 +502,104 @@ class _PostTileState extends State<PostTile> {
   final String postsURL =
       "https://thispensa.herokuapp.com/aggiornaProdottoDispensa";
   TextEditingController controllerNome = TextEditingController();
+
+  FocusNode focus;
+  @override
+  void initState() {
+    super.initState();
+    focus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    focus.dispose();
+    super.dispose();
+  }
+
+  Future<void> aggiornaNomeProdotto(String nome) async {
+    Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+    final SharedPreferences prefs = await _prefs;
+    var params = {
+      "idProdotto": widget.post.idProdotto,
+      "qta": widget.post.qta,
+      "nome": nome,
+      "idDispensa": prefs.getString("idDispensa"),
+      "uid": _auth.currentUser.uid.toString(),
+      "tokenJWT": await _auth.currentUser.getIdToken(),
+    };
+    http.Response res = await http.post(
+        Uri.https('thispensa.herokuapp.com', '/aggiornaProdottoDispensa'),
+        body: json.encode(params),
+        headers: {
+          "Accept": "application/json",
+          HttpHeaders.contentTypeHeader: "application/json"
+        });
+    if (res.statusCode == 200) {
+      Map data = jsonDecode(res.body);
+      if (!data["errore"]) {
+        MyDispensaState().onRefresh();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Nome aggiornato con successo!"),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text("Errore durante l'aggiornamento!"),
+          ),
+        );
+      }
+    } else {
+      throw "Unable change product nome.";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     controllerNome.text = widget.post.name;
     //costruzione item dove inserire il NOME del prodotto
-    final nameItem = Container(
-      width: 150,
-      alignment: Alignment.topLeft,
-      margin: const EdgeInsets.only(left: 12.0),
-      child: TextField(
-        decoration: InputDecoration(
-          border: InputBorder.none,
-        ),
-        controller: controllerNome,
-        style: TextStyle(
-          fontSize: 14,
-        ),
-        //overflow: TextOverflow.fade,
-      ),
-    );
+    final nameItem = SizedBox(
+        width: MediaQuery.of(context).size.width - 200,
+        child: Padding(
+            padding: EdgeInsets.only(left: 10),
+            child: Stack(
+              alignment: Alignment.centerRight,
+              children: <Widget>[
+                Container(
+                  height: 40,
+                  child: TextField(
+                    focusNode: focus,
+                    enabled: true,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                    ),
+                    controller: controllerNome,
+                    style: TextStyle(
+                      fontSize: 14,
+                    ),
+                    // overflow: TextOverflow.fade,
+                    onSubmitted: (value) {
+                      aggiornaNomeProdotto(controllerNome.text);
+                    },
+                  ),
+                ),
+                Container(
+                  height: 40,
+                  color: Colors.transparent,
+                  child: GestureDetector(
+                    onLongPress: () {
+                      focus.requestFocus();
+                    },
+                    onTap: () {
+                      focus.unfocus();
+                      aggiornaNomeProdotto(controllerNome.text);
+                    },
+                  ),
+                ),
+              ],
+            )));
 
     final numberPicker = NumberPicker(
       textStyle: TextStyle(fontSize: 12),
@@ -531,7 +632,12 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           Map data = jsonDecode(res.body);
           if (!data["errore"]) {
-            MyDispensaState()._onLoading();
+            MyDispensaState().onRefresh();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Quantità aggiornata con successo!"),
+              ),
+            );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -558,7 +664,6 @@ class _PostTileState extends State<PostTile> {
         final SharedPreferences prefs = await _prefs;
         var params = {
           "idProdotto": widget.post.idProdotto,
-          "barcode": widget.post.barcode,
           "idDispensa": prefs.getString("idDispensa"),
           "uid": _auth.currentUser.uid.toString(),
           "tokenJWT": await _auth.currentUser.getIdToken(),
@@ -573,7 +678,12 @@ class _PostTileState extends State<PostTile> {
         if (res.statusCode == 200) {
           Map data = jsonDecode(res.body);
           if (!data["errore"]) {
-            MyDispensaState().caricaDispense();
+            MyDispensaState().onRefresh();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Prodotto eliminato con successo!"),
+              ),
+            );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

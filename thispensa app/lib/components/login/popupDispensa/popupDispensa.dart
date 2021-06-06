@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qrscan/qrscan.dart' as scanner;
 import 'package:thispensa/styles/colors.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -99,7 +100,7 @@ class PopUpClass {
                           Material(
                               elevation: 5.0,
                               borderRadius: BorderRadius.circular(30.0),
-                              color: Color.fromARGB(255, 249, 193, 108),
+                              color: Colori.primario,
                               child: MaterialButton(
                                 minWidth: MediaQuery.of(context).size.width,
                                 padding:
@@ -154,8 +155,7 @@ class PopUpClass {
                                           context: context,
                                           builder: (BuildContext context) =>
                                               AlertDialog(
-                                            title:
-                                                const Text('Attenzione'),
+                                            title: const Text('Attenzione'),
                                             content: const Text(
                                                 'E\' già prensete una dispensa con questo nome, sceglierne un\'altro!'),
                                             actions: <Widget>[
@@ -192,6 +192,78 @@ class PopUpClass {
                                 child: Text("Crea la Dispensa",
                                     textAlign: TextAlign.center),
                               )),
+                          SizedBox(height: 10),
+                          Container(
+                              child: Center(
+                                  child: new Column(
+                                      mainAxisSize: MainAxisSize.max,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: <Widget>[
+                                RichText(
+                                    text: new TextSpan(
+                                        style: const TextStyle(
+                                            color: Colors.black87),
+                                        text:
+                                            "Scannerizza un qrcode per aggiungere una dispensa!")),
+                              ]))),
+                          Material(
+                            elevation: 5.0,
+                            borderRadius: BorderRadius.circular(30.0),
+                            color: Colori.primario,
+                            child: MaterialButton(
+                              minWidth: MediaQuery.of(context).size.width,
+                              padding:
+                                  EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 10.0),
+                              onPressed: () async {
+                                //TODO scannerizzazione qrocode
+                                String qrcode = await scanner.scan();
+                                if (qrcode == null) {
+                                  print('nothing return.');
+                                } else {
+                                  var params = {
+                                    "uid": _auth.currentUser.uid.toString(),
+                                    "tokenJWT":
+                                        await _auth.currentUser.getIdToken(),
+                                    "idDispensa": qrcode.toString()
+                                  };
+                                  http.post(
+                                      Uri.https('thispensa.herokuapp.com',
+                                          '/aggiuntaDispensa'),
+                                      body: json.encode(params),
+                                      headers: {
+                                        "Accept": "application/json",
+                                        "withCredential": "true",
+                                        HttpHeaders.contentTypeHeader:
+                                            "application/json"
+                                      }).then((response) async {
+                                    Map data = jsonDecode(response.body);
+                                    if (!data["errore"]) {
+                                    } else {
+                                      showDialog<String>(
+                                        context: context,
+                                        builder: (BuildContext context) =>
+                                            AlertDialog(
+                                          title: const Text('Attenzione'),
+                                          content: const Text(
+                                              'Errore nella lettura e inserimento della dispensa, riprovare'),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, 'OK'),
+                                              child: const Text('OK'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                  });
+                                }
+                              },
+                              child: Text("Scannerizza codice",
+                                  textAlign: TextAlign.center),
+                            ),
+                          ),
                           SizedBox(height: 10),
                           (!first)
                               ? Material(

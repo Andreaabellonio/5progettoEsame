@@ -291,7 +291,7 @@ app.post("/eliminaProdotto", function (req, res) {
 app.post("/creaDispensa", function (req, res) {
     mongoFunctions.find(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, creatore: req.body.uid }, {}, function (data) {
         if (data.length == 0)
-            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid }, function (dispense) {
+            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid, condivisione: false }, function (dispense) {
                 mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
                     res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
                 });
@@ -299,6 +299,18 @@ app.post("/creaDispensa", function (req, res) {
         else {
             res.send(JSON.stringify({ errore: true, messaggio: "Inserire un nome diverso, la dispensa è già presente!" }));
         }
+    });
+});
+
+app.post("/modificaCondivisioneDispensa", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $set: { condivisione: req.body.condivisione } }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
+    });
+});
+
+app.post("/Dispensa", function (req, res) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { $set: { condivisione: req.body.condivisione } }, {}, function (data) {
+        res.send(JSON.stringify({ errore: false }));
     });
 });
 
