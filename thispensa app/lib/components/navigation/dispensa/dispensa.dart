@@ -27,14 +27,12 @@ class MyDispensa extends StatefulWidget {
 class MyDispensaState extends State<MyDispensa> {
   TextEditingController _searchQueryController = TextEditingController();
   bool _isSearching = false;
-  //String searchQuery = "Search query";
   final HttpService httpService = HttpService();
   String idDispensa;
   String nomeDispensa =
       ""; //carico dinamicamente il nome della dispensa selezionata
   ListView elencoDispense;
   List<Post> oggetti2 = [];
-  List<Post> oggetti3 = [];
   PopUpClass pop = new PopUpClass();
   RefreshController _refreshController =
       RefreshController(initialRefresh: false);
@@ -279,102 +277,92 @@ class MyDispensaState extends State<MyDispensa> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: _isSearching
-            ? const BackButton()
-            : (Builder(
-                builder: (context) => IconButton(
-                    onPressed: () {
-                      Scaffold.of(context).openDrawer();
-                    },
-                    icon: Icon(Icons.menu)))),
-        title: _isSearching ? _buildSearchField() : Text(nomeDispensa),
-        actions: _buildActions(),
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colori.primario,
-        child: Icon(Icons.add),
-        onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (context) => AddTaskScreen())),
-      ),
-      drawer: Drawer(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colori.primario,
-              ),
-              child: Text(
-                'Dispense',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 40.0,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-            (elencoDispense != null)
-                ? elencoDispense
-                : Center(child: CircularProgressIndicator()),
-            SizedBox(height: 15),
-            FloatingActionButton(
-                backgroundColor: Colori.primario,
-                child: Icon(Icons.add),
-                onPressed: () async {
-                  pop.callback = caricaDispense;
-                  await showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return pop.popupDispensa(context);
-                      });
-                  Navigator.pop(context);
-                }),
-          ],
+        appBar: AppBar(
+          leading: _isSearching
+              ? const BackButton()
+              : (Builder(
+                  builder: (context) => IconButton(
+                      onPressed: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                      icon: Icon(Icons.menu)))),
+          title: _isSearching ? _buildSearchField() : Text(nomeDispensa),
+          actions: _buildActions(),
         ),
-      ),
-      body: (!_isSearching)
-          ? SmartRefresher(
-              enablePullDown: true,
-              header: MaterialClassicHeader(color: Colori.primario),
-              footer: CustomFooter(
-                builder: (BuildContext context, LoadStatus mode) {
-                  Widget body;
-                  if (mode == LoadStatus.idle) {
-                    body = Text("pull up load");
-                  } else if (mode == LoadStatus.loading) {
-                    body = CupertinoActivityIndicator();
-                  } else if (mode == LoadStatus.failed) {
-                    body = Text("Load Failed!Click retry!");
-                  } else if (mode == LoadStatus.canLoading) {
-                    body = Text("release to load more");
-                  } else {
-                    body = Text("No more Data");
-                  }
-                  return Container(
-                    height: 55.0,
-                    child: Center(child: body),
-                  );
-                },
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colori.primario,
+          child: Icon(Icons.add),
+          onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (context) => AddTaskScreen())),
+        ),
+        drawer: Drawer(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colori.primario,
+                ),
+                child: Text(
+                  'Dispense',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 40.0,
+                      fontWeight: FontWeight.bold),
+                ),
               ),
-              controller: _refreshController,
-              onRefresh: onRefresh,
-              onLoading: _onLoading,
-              child: ListView.builder(
-                itemCount: oggetti2.length,
-                itemBuilder: (BuildContext context, int index) {
-                  print(oggetti2[index].name);
-                  return _itemBuilder(oggetti2[index]);
-                },
-              ),
-            )
-          : ListView.builder(
-              itemCount: oggetti3.length,
-              itemBuilder: (BuildContext context, int index) {
-                print(oggetti3[index].name);
-                return _itemBuilder(oggetti3[index]);
-              },
-            ),
-    );
+              (elencoDispense != null)
+                  ? elencoDispense
+                  : Center(child: CircularProgressIndicator()),
+              SizedBox(height: 15),
+              FloatingActionButton(
+                  backgroundColor: Colori.primario,
+                  child: Icon(Icons.add),
+                  onPressed: () async {
+                    pop.callback = caricaDispense;
+                    await showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return pop.popupDispensa(context);
+                        });
+                    Navigator.pop(context);
+                  }),
+            ],
+          ),
+        ),
+        body: SmartRefresher(
+          enablePullDown: true,
+          header: MaterialClassicHeader(color: Colori.primario),
+          footer: CustomFooter(
+            builder: (BuildContext context, LoadStatus mode) {
+              Widget body;
+              if (mode == LoadStatus.idle) {
+                body = Text("pull up load");
+              } else if (mode == LoadStatus.loading) {
+                body = CupertinoActivityIndicator();
+              } else if (mode == LoadStatus.failed) {
+                body = Text("Load Failed!Click retry!");
+              } else if (mode == LoadStatus.canLoading) {
+                body = Text("release to load more");
+              } else {
+                body = Text("No more Data");
+              }
+              return Container(
+                height: 55.0,
+                child: Center(child: body),
+              );
+            },
+          ),
+          controller: _refreshController,
+          onRefresh: onRefresh,
+          onLoading: _onLoading,
+          child: ListView.builder(
+            itemCount: oggetti2.length,
+            itemBuilder: (BuildContext context, int index) {
+              return _itemBuilder(oggetti2[index]);
+            },
+          ),
+        ));
   }
 
   Widget _buildSearchField() {
@@ -422,7 +410,6 @@ class MyDispensaState extends State<MyDispensa> {
 
     setState(() {
       _isSearching = true;
-      oggetti3 = [];
     });
   }
 
@@ -432,8 +419,7 @@ class MyDispensaState extends State<MyDispensa> {
             post.name.toLowerCase().contains(newQuery.toLowerCase()))
         .toList();
     setState(() {
-      //searchQuery = newQuery;
-      oggetti3 = coseFiltrate;
+      oggetti2 = coseFiltrate;
     });
   }
 
@@ -496,7 +482,6 @@ class _PostTileState extends State<PostTile> {
   TextEditingController controllerNome = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    print("we" + widget.post.name);
     controllerNome.text = widget.post.name;
     //costruzione item dove inserire il NOME del prodotto
     final nameItem = Container(
@@ -533,6 +518,7 @@ class _PostTileState extends State<PostTile> {
           "tokenJWT": await _auth.currentUser.getIdToken(),
           "idProdotto": widget.post.idProdotto,
           "qta": widget.post.qta,
+          "nome": widget.post.name,
           "idDispensa": prefs.getString("idDispensa")
         };
         http.Response res = await http.post(

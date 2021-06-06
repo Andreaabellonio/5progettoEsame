@@ -6,15 +6,11 @@ class DatePicker extends StatefulWidget {
   DatePicker(this.data, this.callback);
 
   @override
-  _DatePickerState createState() => _DatePickerState(data);
+  _DatePickerState createState() => _DatePickerState();
 }
 
 class _DatePickerState extends State<DatePicker> {
   TextEditingController dateController = TextEditingController();
-
-  _DatePickerState(data) {
-    dateController = data;
-  }
 
   @override
   void dispose() {
@@ -25,6 +21,7 @@ class _DatePickerState extends State<DatePicker> {
 
   @override
   Widget build(BuildContext context) {
+    dateController = widget.data;
     return new Center(
         child: TextField(
       readOnly: true,

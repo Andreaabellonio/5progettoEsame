@@ -335,7 +335,7 @@ app.post("/inserisciProdottoDispensa", function (req, res) {
 
 //? Aggiornamento dati relativi ad un prodotto nella dispensa
 app.post("/aggiornaProdottoDispensa", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectId(req.body.idDispensa), "elementi.idProdotto": mongo.ObjectId(req.body.idProdotto) }, { $set: { "elementi.$.qta": req.body.qta } }, {}, function (data) {
+    mongoFunctions.update(res, nomeDb, "dispense", { _id: mongo.ObjectId(req.body.idDispensa), "elementi.idProdotto": mongo.ObjectId(req.body.idProdotto) }, { $set: { "elementi.$.qta": req.body.qta, "elementi.$.nome": req.body.nome } }, {}, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });
