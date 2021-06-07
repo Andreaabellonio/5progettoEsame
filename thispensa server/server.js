@@ -390,6 +390,56 @@ app.post("/aggiornaDispensa", function (req, res) {
 });
 
 //#endregion
+//#region gestione lista della spesa
+app.post("/inserisciProdottoListaSpesa", function (req, res) {
+    let dato = {
+        idProdotto: new mongo.ObjectId(),
+        titolo: req.body.titolo,
+        qta: req.body.qta,
+        priorita: req.body.priorita,
+        status: req.body.status,
+    };
+    //? Con upsert se esiste fa l'update se non esiste lo inserisce
+    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
+        mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectID(data[0].listeDellaSpesa[0]) }, { $push: { "elementi": dato } }, {}, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });
+});
+
+
+app.post("/leggiListaSpesa", function (req, res) {
+    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
+        mongoFunctions.find(res, nomeDb, "liste_della_spesa", { _id: data[0].listeDellaSpesa[0] }, { elementi: 1 }, function (data) {
+            res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
+        });
+    });
+});
+
+app.post("/aggiornaProdottoListaSpesa", function (req, res) {
+    let dato = {
+        idProdotto: new mongo.ObjectId(),
+        titolo: req.body.titolo,
+        qta: req.body.qta,
+        priorita: req.body.priorita,
+        status: req.body.status,
+    };
+    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
+        mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectId(data[0].listeDellaSpesa[0]), "elementi.idProdotto": mongo.ObjectId(req.body.idProdotto) }, { $set: { "elementi.$": dato } }, {}, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });
+});
+
+app.post("/eliminaProdottoListaSpesa", function (req, res) {
+    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
+        mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectID(data[0].listeDellaSpesa[0]) }, { $pull: { elementi: { idProdotto: mongo.ObjectID(req.body.idProdotto) } } }, {}, function (data) {
+            res.send(JSON.stringify({ errore: false }));
+        });
+    });
+});
+
+//#endregion
 //#endregion
 
 //#region FUNZIONI AGGIUNTIVE

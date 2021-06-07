@@ -117,7 +117,8 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                                 validator: (input) => input.trim().isEmpty
                                     ? 'Inserisci il nome del prodotto'
                                     : null,
-                                onSaved: (input) => widget.nomeProdotto = input,
+                                onChanged: (input) =>
+                                    widget.nomeProdotto = input,
                                 initialValue: widget.nomeProdotto,
                               ),
                             ),
@@ -138,31 +139,32 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                                     padding: EdgeInsets.all(8.0),
                                   )
                                 : SizedBox(height: 0),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: TextFormField(
-                                initialValue: widget.calorie,
-                                keyboardType: TextInputType.number,
-                                enabled: (widget.manuale) ? true : false,
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  fontSize: 18,
-                                ),
-                                decoration: InputDecoration(
-                                  disabledBorder: (widget.manuale)
-                                      ? OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0))
-                                      : UnderlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Colors.black38)),
-                                  labelText: 'Calorie',
-                                  labelStyle: TextStyle(
-                                    color: Colors.black38,
+                            (!widget.manuale)
+                                ? Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    child: TextFormField(
+                                      initialValue: widget.calorie,
+                                      keyboardType: TextInputType.number,
+                                      enabled: false,
+                                      style: TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 18,
+                                      ),
+                                      decoration: InputDecoration(
+                                        disabledBorder: UnderlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Colors.black38)),
+                                        labelText: 'Calorie',
+                                        labelStyle: TextStyle(
+                                          color: Colors.black38,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : SizedBox(
+                                    height: 0,
                                   ),
-                                ),
-                              ),
-                            ),
                             (widget.tracce[0] !=
                                     "Non disponibile per questo prodotto")
                                 ? Padding(

@@ -28,10 +28,15 @@ class Settings {
                     size: 37,
                   )),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => action),
-                );
+                (text != "Feedback")
+                    ? Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => action),
+                      )
+                    : Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => action),
+                      );
               },
             ),
           ),
@@ -154,7 +159,7 @@ class Settings {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             buildButton(
-                                                "Assistenza",
+                                                "Feedback",
                                                 Icons.help_outline,
                                                 Help(),
                                                 context),

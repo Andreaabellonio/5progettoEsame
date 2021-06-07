@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart';
+import 'package:thispensa/components/navigation/shopping_list/models/task_model.dart';
 import '../../../../models/post_model.dart';
 import '../../../../models/dispensa_model.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
@@ -88,6 +89,47 @@ class HttpService {
       return dispense;
     } else {
       throw "Unable to retrieve Dispense.";
+    }
+  }
+
+  Future<List<Task>> getTasks() async {
+    String postsURL = "https://thispensa.herokuapp.com/leggiListaSpesa";
+    var params = {
+      "uid": _auth.currentUser.uid.toString(),
+      "tokenJWT": await _auth.currentUser.getIdToken()
+    };
+    //? Richiesta post al server node con parametri
+    Response res = await post(Uri.parse(postsURL),
+        body: json.encode(params),
+        headers: {
+          "Accept": "application/json",
+          HttpHeaders.contentTypeHeader: "application/json"
+        });
+
+    //Response res = await get(postsURL);
+    if (res.statusCode == 200) {
+      dynamic body = jsonDecode(res.body);
+      //print(res.body);
+
+      List<dynamic> lista = body["prodotti"];
+      //print(lista);
+
+      final List<Task> taskList = [];
+      if (lista.length > 0)
+        lista.forEach((taskMap) {
+          taskList
+              .add(Task.fromMap(taskMap)); //richiamo al documento task_model
+
+          /*for (var i = 0; i < lista.length; i++) {
+          taskList.add(Dispensa(
+            id: lista[i]["_id"] as String,
+            nome: lista[i]["nome"] as String,
+            creator*e: lista[i]["creatore"] as String,
+          ));*/
+        });
+      return taskList;
+    } else {
+      throw "Unable to retrieve Item.";
     }
   }
 }

@@ -1,10 +1,9 @@
+import 'package:thispensa/components/navigation/Settings/button_settings/sheets/_Feedback.dart';
 import 'package:thispensa/components/navigation/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info/package_info.dart';
 import 'dart:io' show Platform;
-
-import 'sheets/_Help.dart';
 import 'sheets/_Privacy.dart';
 import 'sheets/_Account.dart';
 
@@ -47,8 +46,7 @@ class Help extends StatefulWidget {
   const Help({Key key}) : super(key: key);
 
   @override
-  HelpState createState() =>
-      HelpState(); //classe recuperabile in: user/screens/sheets/_Help.dart
+  FeedbackWidget createState() => FeedbackWidget();
 }
 
 class InfoState extends StatelessWidget {

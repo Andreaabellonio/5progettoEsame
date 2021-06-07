@@ -1,7 +1,9 @@
+import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:thispensa/components/navigation/dispensa/dispensa.dart';
-import 'package:thispensa/components/navigation/shopping_list/shoppingList.dart';
+import 'package:thispensa/components/navigation/shopping_list/ListaSpesa.dart';
 import 'package:thispensa/styles/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Settings/menu_settings.dart';
@@ -18,14 +20,35 @@ class PaginaVera extends StatefulWidget {
 class _PaginaVeraState extends State<PaginaVera> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Thispensa',
-      theme: ThemeData(
-        primaryColor: Colori.primario,
+    return BetterFeedback(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Thispensa',
+        theme: ThemeData(
+          primaryColor: Colori.primario,
+        ),
+        home: MyNavWidget(),
+        builder: EasyLoading.init(),
       ),
-      home: MyNavWidget(),
-      builder: EasyLoading.init(),
+      theme: FeedbackThemeData(
+        background: Colors.grey,
+        feedbackSheetColor: Colors.grey[50],
+        drawColors: [
+          Colors.red,
+          Colors.green,
+          Colors.blue,
+          Colors.yellow,
+        ],
+      ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalFeedbackLocalizationsDelegate(),
+      ],
+      localeOverride: const Locale('it'),
+      mode: FeedbackMode.draw,
+      pixelRatio: 1,
     );
   }
 }
