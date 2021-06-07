@@ -12,7 +12,6 @@ class MobileVision extends StatefulWidget {
 
 class _MobileVisionState extends State<MobileVision> {
   Future<Null> _read() async {
-    print("sciao beo");
     List<OcrText> texts = [];
     try {
       texts = await FlutterMobileVision.read(

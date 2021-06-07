@@ -30,7 +30,6 @@ class HttpService {
       dynamic body = jsonDecode(res.body);
 
       List<dynamic> lista = body["prodotti"];
-      print(lista);
       List<Post> posts = [];
 
       for (var i = 0; i < lista.length; i++) {
@@ -72,11 +71,7 @@ class HttpService {
     //Response res = await get(postsURL);
     if (res.statusCode == 200) {
       dynamic body = jsonDecode(res.body);
-      //print(res.body);
-
       List<dynamic> lista = body["dati"];
-      //print(lista);
-
       List<Dispensa> dispense = [];
       if (lista.length > 0)
         for (var i = 0; i < lista.length; i++) {
@@ -109,11 +104,7 @@ class HttpService {
     //Response res = await get(postsURL);
     if (res.statusCode == 200) {
       dynamic body = jsonDecode(res.body);
-      //print(res.body);
-
       List<dynamic> lista = body["prodotti"];
-      //print(lista);
-
       final List<Task> taskList = [];
       if (lista.length > 0)
         lista.forEach((taskMap) {

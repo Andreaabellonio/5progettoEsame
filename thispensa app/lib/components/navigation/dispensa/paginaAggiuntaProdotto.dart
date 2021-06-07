@@ -75,7 +75,9 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
                     centerTitle: true,
-                    background: (widget.urlImmagine != "")
+                    background: (widget.urlImmagine != "" ||
+                            widget.urlImmagine ==
+                                "Non disponibile per questo prodotto")
                         ? Image.network(widget.urlImmagine, fit: BoxFit.contain)
                         : Image.asset("assets/foodPhoto.png")),
               ),
@@ -294,7 +296,6 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                                       //mando la chiamata
                                       String data = controllerData.text;
                                       int quantita = _currentHorizontalIntValue;
-                                      print(data + " " + quantita.toString());
                                       Future<SharedPreferences> _prefs =
                                           SharedPreferences.getInstance();
                                       final SharedPreferences prefs =
@@ -341,9 +342,8 @@ class _PaginaAggiuntaProdottoState extends State<PaginaAggiuntaProdotto> {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         const SnackBar(
-                                          backgroundColor: Colors.red,
                                           content: Text(
-                                              'Errore nell\'inserimento sul server'),
+                                              'E\' necessario inserire una data per continuare!'),
                                         ),
                                       );
                                     }

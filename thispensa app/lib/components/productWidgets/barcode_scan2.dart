@@ -19,8 +19,6 @@ class _BarcodeState extends State<Barcode> {
   void _letturaDati(String codice) async {
     EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
     EasyLoading.show();
-    print("LETTURA DATI");
-    print(codice);
 
     //funzione che prende il codice usa l'api che crea la scheda di aggiunta
     getProduct1(codice);
@@ -65,19 +63,6 @@ class _BarcodeState extends State<Barcode> {
           }
         } else
           tracceTradotte.add("Non disponibile per questo prodotto");
-        String ingredienti = "";
-        if (result.product.ingredientsTextEN != null)
-          ingredienti = result.product.ingredientsTextEN == null
-              ? "Non disponibile per questo prodotto"
-              : await traduci(result.product.ingredientsTextEN, null, "en");
-        else
-          ingredienti = result.product.ingredientsText == ""
-              ? "Non disponibile per questo prodotto"
-              : await traduci(
-                  result.product.ingredientsText, result.product.lang);
-        String qta = result.product.quantity == null
-            ? "Non disponibile per questo prodotto"
-            : result.product.quantity.toString();
         EasyLoading.dismiss();
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -124,12 +109,10 @@ class _BarcodeState extends State<Barcode> {
     try {
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
           "#ff6666", "Esci", true, ScanMode.BARCODE);
-      print(barcodeScanRes);
     } on PlatformException {
       barcodeScanRes = 'Errore nello scanner di barcode';
     }
     if (!mounted) return;
-    print(barcodeScanRes);
     if (barcodeScanRes != "-1") _letturaDati(barcodeScanRes);
   }
 

@@ -2,8 +2,7 @@ import 'package:thispensa/components/navigation/Settings/button_settings/sheets/
 import 'package:thispensa/components/navigation/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:package_info/package_info.dart';
-import 'dart:io' show Platform;
+import 'sheets/_Info.dart';
 import 'sheets/_Privacy.dart';
 import 'sheets/_Account.dart';
 
@@ -49,86 +48,12 @@ class Help extends StatefulWidget {
   FeedbackWidget createState() => FeedbackWidget();
 }
 
-class InfoState extends StatelessWidget {
-  String version2 = Platform.version;
-
-  Future<String> getVersionNumber() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    String version = packageInfo.version;
-
-    return version;
-  }
+class Info extends StatefulWidget {
+  Info({Key key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView(
-        children: <Widget>[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  "About",
-                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
-                ),
-              ),
-              Divider(),
-            ],
-          ),
-          // The version tile :
-          ListTile(
-            enabled: false,
-            title: Text("Version"),
-            trailing: FutureBuilder(
-              future: getVersionNumber(),
-              builder: (BuildContext context, AsyncSnapshot<String> snapshot) =>
-                  Container(
-                padding: EdgeInsets.symmetric(
-                  vertical: 250.0,
-                ),
-                child: Column(children: [
-                  Icon(
-                    Icons.developer_board,
-                    size: 100,
-                  ),
-                  Text(
-                    "vv. " + snapshot.data,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  Text(version2),
-                ]),
-              ), /*Text(
-                snapshot.hasData ? snapshot.data : "Loading ...",
-                style: TextStyle(color: Colors.black38),
-              ),*/
-            ),
-          ),
-          // ...
-        ],
-      ),
-    );
-  }
-
-  /*Future<String> getVersionNumber() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    String version = packageInfo.version;
-
-    return version;
-  }*/
+  InfoState createState() => InfoState();
 }
-/*
-class InfoState extends StatelessWidget {
-  @override
-  Widget build(context) {
-    FutureBuilder(
-    future: getVersionNumber(), // The async function we wrote earlier that will be providing the data i.e vers. no
-    builder: (BuildContext context, AsyncSnapshot<String> snapshot) =>	Text(snapshot.hasData ? snapshot.data : "Loading ...",) // The widget using the data
-  ),
-  }
-}*/
 
 class Themes extends StatefulWidget {
   @override

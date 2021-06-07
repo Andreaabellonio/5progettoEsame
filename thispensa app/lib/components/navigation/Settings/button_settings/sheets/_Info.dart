@@ -1,72 +1,10 @@
 import 'package:flutter/material.dart';
-import 'dart:io' show Platform;
-
-Widget versionApp(version) {
-  String version2=Platform.version;
-  return Container(
-    padding: EdgeInsets.symmetric(
-      vertical: 250.0,
-    ),
-    child: Column(children: [
-      Icon(
-        Icons.developer_board,
-        size: 100,
-      ),
-      Text(
-        "vv. " + version,
-        textAlign: TextAlign.end,
-        style: TextStyle(fontSize: 20),
-      ),
-      Text(version2),
-    ]),
-  );
-  }
-
-  
-  /*PackageInfo packageInfo = await PackageInfo.fromPlatform();
-  String versionName = packageInfo.version;
-  String versionCode = packageInfo.buildNumber;*/
-
-  
-
-/*
-
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// ignore_for_file: public_member_api_docs
-
 import 'dart:async';
-
-import 'package:flutter/material.dart';
 import 'package:package_info/package_info.dart';
 
-void main() {
-  runApp(MyApp());
-}
+import '../stgButton.dart';
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'PackageInfo Demo',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: MyHomePage(title: 'PackageInfo example app'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
+class InfoState extends State<Info> {
   PackageInfo _packageInfo = PackageInfo(
     appName: 'Unknown',
     packageName: 'Unknown',
@@ -87,10 +25,22 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Widget _infoTile(String title, String subtitle) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(subtitle.isNotEmpty ? subtitle : 'Not set'),
+  Widget _infoTile(String title, String subtitle, {TextStyle style}) {
+    return Container(
+      width: MediaQuery.of(context).size.width - 200,
+      child: ListTile(
+        title: Center(
+          child: Text(
+            title,
+            style: style,
+          ),
+        ),
+        subtitle: Center(
+            child: Text(
+          subtitle.isNotEmpty ? subtitle : 'Not set',
+          style: style,
+        )),
+      ),
     );
   }
 
@@ -98,17 +48,31 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text("Informazioni"),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          _infoTile('App name', _packageInfo.appName),
-          _infoTile('Package name', _packageInfo.packageName),
-          _infoTile('App version', _packageInfo.version),
-          _infoTile('Build number', _packageInfo.buildNumber),
-        ],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 35),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(Icons.memory, size: 110),
+                  _infoTile('App version', _packageInfo.version,
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 23)),
+                ],
+              ),
+            ),
+            _infoTile('App name', _packageInfo.appName),
+            _infoTile('Package name', _packageInfo.packageName),
+            _infoTile('Build number', _packageInfo.buildNumber),
+          ],
+        ),
       ),
     );
   }
-}*/
+}

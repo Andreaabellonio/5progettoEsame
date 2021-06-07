@@ -33,13 +33,6 @@ class _MyListWidgetState extends State<MyListWidget> {
     }
   }
 
-  void _onLoading() async {
-    if (mounted) {
-      caricaListaSpesa();
-      refreshController.loadComplete();
-    }
-  }
-
   @override
   void initState() {
     onRefresh();
@@ -85,8 +78,8 @@ class _MyListWidgetState extends State<MyListWidget> {
                         EasyLoading.instance.userInteractions = false;
                         EasyLoading.show();
                         task.status = value ? 1 : 0;
-                        await AddTaskScreenState().modificaTask(task);
-                        await onRefresh();
+                        AddTaskScreenState().modificaTask(task);
+                        onRefresh();
                         EasyLoading.dismiss();
                         //si ricaricano i task
                       },

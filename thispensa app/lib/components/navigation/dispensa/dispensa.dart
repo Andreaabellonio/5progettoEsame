@@ -49,11 +49,14 @@ class MyDispensaState extends State<MyDispensa> {
       )));
 
   void onRefresh() async {
+    EasyLoading.instance.indicatorType = EasyLoadingIndicatorType.foldingCube;
+    EasyLoading.instance.userInteractions = false;
+    EasyLoading.show();
     pop.first = false;
     setState(() {
       oggetti2 = []; //CHI TOCCA MUORE: senza questa schifezza non va nulla
     });
-    caricaDispense();
+    await caricaDispense();
     if (mounted) {
       setState(() {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,6 +64,7 @@ class MyDispensaState extends State<MyDispensa> {
         });
       });
     }
+    EasyLoading.dismiss();
   }
 
   void _onLoading() async {
@@ -78,7 +82,7 @@ class MyDispensaState extends State<MyDispensa> {
     super.initState();
   }
 
-  void caricaDispense() async {
+  Future<void> caricaDispense() async {
     List<Dispensa> dispense = await httpService.getDispense();
     if (dispense.length == 0) {
       pop.first = true;
@@ -363,7 +367,7 @@ class MyDispensaState extends State<MyDispensa> {
                       Map data = jsonDecode(res.body);
                       if (!data["errore"]) {
                         prefs.setString("nomeDispensa", valore);
-                        await onRefresh();
+                        onRefresh();
                         EasyLoading.dismiss();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

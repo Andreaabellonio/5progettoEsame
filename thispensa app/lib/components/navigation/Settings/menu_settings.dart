@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:thispensa/components/login/autenticazione.dart';
 import 'package:thispensa/styles/colors.dart';
-//import 'user/screens/screens.dart';
+import 'package:share_plus/share_plus.dart';
 import 'button_settings/stgButton.dart';
 import 'package:http/http.dart' as http;
 
@@ -144,11 +144,45 @@ class Settings {
                                                 Icons.perm_identity,
                                                 Account(),
                                                 context),
-                                            buildButton(
-                                                "Invita la famiglia",
-                                                Icons.supervisor_account,
-                                                Invite(),
-                                                context),
+                                            Column(
+                                              children: [
+                                                ClipOval(
+                                                  child: Material(
+                                                    color: Colori
+                                                        .primario, // button color
+                                                    child: InkWell(
+                                                      splashColor: Colors
+                                                          .red, // inkwell color
+                                                      child: SizedBox(
+                                                          width: 70,
+                                                          height: 70,
+                                                          child: Icon(
+                                                            Icons
+                                                                .supervisor_account,
+                                                            size: 37,
+                                                          )),
+                                                      onTap: () async {
+                                                        final box = context
+                                                                .findRenderObject()
+                                                            as RenderBox;
+                                                        await Share.share(
+                                                            "https://thispensa.page.link/invita",
+                                                            subject: "Invito",
+                                                            sharePositionOrigin:
+                                                                box.localToGlobal(
+                                                                        Offset
+                                                                            .zero) &
+                                                                    box.size);
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 15,
+                                                ),
+                                                Text("Invita"),
+                                              ],
+                                            ),
                                             buildButton("Privacy", Icons.lock,
                                                 Privacy(), context),
                                           ],
@@ -166,7 +200,7 @@ class Settings {
                                             buildButton(
                                                 "Informazioni",
                                                 Icons.info,
-                                                InfoState(),
+                                                Info(),
                                                 context),
                                             buildButton(
                                                 "Tema",

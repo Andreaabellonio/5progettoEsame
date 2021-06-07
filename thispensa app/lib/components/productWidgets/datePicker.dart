@@ -35,7 +35,7 @@ class _DatePickerState extends State<DatePicker> {
                 firstDate: DateTime(2000),
                 lastDate: DateTime(2100));
             dateController.text =
-                (date != '') ? date.toLocal().toString().split(' ')[0] : "";
+                (date.toString() != '') ? date.toLocal().toString().split(' ')[0] : "";
             widget.callback(dateController);
           },
         ),

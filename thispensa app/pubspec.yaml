@@ -40,8 +40,6 @@ dependencies:
   prompt_dialog: ^1.0.0
   flutter_launcher_icons: ^0.9.0
   flutter_email_sender: ^5.0.0
-  circular_profile_avatar: ^2.0.0
-  sqflite: ^2.0.0+3
   path_provider: ^2.0.1
   numberpicker: ^2.1.1
   openfoodfacts: ^1.1.0-beta
@@ -53,6 +51,7 @@ dependencies:
   qrscan: ^0.3.1
   feedback: ^2.0.0-beta.0
   flutter_markdown: ^0.6.2
+  share_plus: ^2.1.2
   
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

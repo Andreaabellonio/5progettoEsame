@@ -61,6 +61,21 @@ class AddTaskScreenState extends State<AddTaskScreen> {
     //Response res = await get(postsURL);
     if (res.statusCode == 200) {
       dynamic body = jsonDecode(res.body);
+      if (body["errore"]) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Errore nell\'esecuzione della chiamata sul server'),
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Errore nel server, riprovare più tardi!'),
+        ),
+      );
     }
 
     await widget.callback();
@@ -82,12 +97,12 @@ class AddTaskScreenState extends State<AddTaskScreen> {
       if (widget.task == null) {
         //se l'elemento non esiste lo creo
         task.status = 0; //per indicare che non è ancora checkata
-        await aggiungiTask(task);
+        aggiungiTask(task);
       } else {
         //se l'oggetto esiste aggiorno la task
         task.id = widget.task.id;
         task.status = widget.task.status;
-        await modificaTask(task);
+        modificaTask(task);
       }
 
       //aggiornare l'elemento
@@ -120,6 +135,21 @@ class AddTaskScreenState extends State<AddTaskScreen> {
     //Response res = await get(postsURL);
     if (res.statusCode == 200) {
       dynamic body = jsonDecode(res.body);
+      if (body["errore"]) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Errore nell\'esecuzione della chiamata sul server'),
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Errore nel server, riprovare più tardi!'),
+        ),
+      );
     }
   }
 
@@ -146,6 +176,21 @@ class AddTaskScreenState extends State<AddTaskScreen> {
     //Response res = await get(postsURL);
     if (res.statusCode == 200) {
       dynamic body = jsonDecode(res.body);
+      if (body["errore"]) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Errore nell\'esecuzione della chiamata sul server'),
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Errore nel server, riprovare più tardi!'),
+        ),
+      );
     }
   }
 
@@ -203,10 +248,10 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                 borderRadius: BorderRadius.circular(10.0)),
                           ),
                           //toglie gli spazi per osservare che ci sia o meno scritto qualcosa
-                          validator: (input) => input.trim().isEmpty
+                          validator: (input) => input == ""
                               ? 'Inserisci un titolo per continuare'
                               : null,
-                          onSaved: (input) => _title = input,
+                          onChanged: (input) => _title = input,
                           initialValue:
                               _title, //inserirsce il valore di _title nella textbox (utile nel caso esistesse già il task)
                         ),
