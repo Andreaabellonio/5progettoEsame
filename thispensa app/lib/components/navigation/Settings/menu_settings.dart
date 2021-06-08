@@ -28,21 +28,16 @@ class Settings {
                     size: 37,
                   )),
               onTap: () {
-                (text != "Feedback")
-                    ? Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => action),
-                      )
-                    : Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => action),
-                      );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => action),
+                );
               },
             ),
           ),
         ),
         SizedBox(
-          height: 15,
+          height: 10,
         ),
         Text(text),
       ],
@@ -71,8 +66,11 @@ class Settings {
     showModalBottomSheet(
         backgroundColor: Colors.transparent,
         context: context,
+        clipBehavior: Clip.antiAlias,
+        isScrollControlled: true,
         builder: (BuildContext context) {
           return Container(
+            height: 410,
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(50.0),
@@ -84,10 +82,10 @@ class Settings {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
                 Container(
-                  height: 36,
+                  height: 30,
                 ),
                 SizedBox(
-                    height: (415.0),
+                    height: 380,
                     child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.only(
@@ -98,7 +96,7 @@ class Settings {
                         ),
                         child: Stack(
                           alignment: Alignment(0, 0),
-                          overflow: Overflow.visible,
+                          clipBehavior: Clip.none,
                           children: <Widget>[
                             Positioned(
                               top: -36,
@@ -110,10 +108,6 @@ class Settings {
                                         color: Colori.primario, width: 10)),
                                 child: Center(
                                   child: ClipOval(
-                                    /*child: Image.asset(
-                                      "assets/foodPhoto.png",
-                                      fit: BoxFit.contain,
-                                    ),*/
                                     child: Image.asset(
                                       "assets/backgroundWhite.png",
                                       fit: BoxFit.contain,
@@ -178,7 +172,7 @@ class Settings {
                                                   ),
                                                 ),
                                                 SizedBox(
-                                                  height: 15,
+                                                  height: 10,
                                                 ),
                                                 Text("Invita"),
                                               ],
@@ -197,11 +191,8 @@ class Settings {
                                                 Icons.help_outline,
                                                 Help(),
                                                 context),
-                                            buildButton(
-                                                "Informazioni",
-                                                Icons.info,
-                                                Info(),
-                                                context),
+                                            buildButton("Informazioni",
+                                                Icons.info, Info(), context),
                                             buildButton(
                                                 "Tema",
                                                 Icons.color_lens,
@@ -209,7 +200,7 @@ class Settings {
                                                 context),
                                           ],
                                         ),
-                                        SizedBox(height: 40),
+                                        SizedBox(height: 28),
                                         Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.center,
@@ -225,7 +216,7 @@ class Settings {
                                                       width: 70,
                                                       height: 70,
                                                       child: Icon(
-                                                        Icons.save,
+                                                        Icons.logout,
                                                         size: 37,
                                                       )),
                                                   onTap: () async {
@@ -249,7 +240,7 @@ class Settings {
                                               ),
                                             ),
                                             SizedBox(
-                                              height: 15,
+                                              height: 10,
                                             ),
                                             Text("Esci"),
                                           ],

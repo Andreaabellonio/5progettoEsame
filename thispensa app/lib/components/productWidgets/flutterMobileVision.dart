@@ -2,6 +2,7 @@ import 'package:flutter_mobile_vision/flutter_mobile_vision.dart';
 import 'package:flutter/material.dart';
 import 'package:thispensa/styles/colors.dart';
 
+// ignore: must_be_immutable
 class MobileVision extends StatefulWidget {
   Function(String) callback;
   MobileVision(this.callback);

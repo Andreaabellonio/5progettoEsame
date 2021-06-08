@@ -14,6 +14,7 @@ import 'package:thispensa/styles/colors.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
+// ignore: must_be_immutable
 class PaginaAggiuntaProdotto extends StatefulWidget {
   String barcode = "";
   String nomeProdotto = "";

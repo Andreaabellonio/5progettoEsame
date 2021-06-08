@@ -85,6 +85,7 @@ class RegisterPage extends StatefulWidget {
   _registerPage createState() => _registerPage();
 }
 
+// ignore: camel_case_types
 class _registerPage extends State<RegisterPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();

@@ -8,6 +8,7 @@ import 'package:thispensa/styles/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Settings/menu_settings.dart';
 
+// ignore: camel_case_types
 class temaApp {
   static ThemeMode tema;
 }

@@ -103,7 +103,7 @@ class _BarcodeState extends State<Barcode> {
       return input;
   }
 
-  Future<void> ScansionaBarCode() async {
+  Future<void> scansionaBarCode() async {
     //? Funzione richiamata sul clic del pulsante
     String barcodeScanRes;
     try {
@@ -119,7 +119,7 @@ class _BarcodeState extends State<Barcode> {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      onPressed: ScansionaBarCode,
+      onPressed: scansionaBarCode,
       child: Icon(Icons.add_a_photo),
       backgroundColor: Colori.primario,
     );
