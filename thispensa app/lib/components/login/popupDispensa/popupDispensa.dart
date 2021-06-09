@@ -307,11 +307,11 @@ class PopUpClass {
           TextSpan(
               text: 'Inizia ad utilizzare la tua applicazione inserendo' +
                   ((first)
-                      ? ' la tua prima'
+                      ? ' la tua prima dispensa.'
                       : ' una nuova Thispensa e trova tutti i vantaggi nel raggruppare i tuoi prodotti in un unico luogo.\n\n')),
           TextSpan(
             text:
-                'All\'interno troverai tantissime funzionalità comode per salvare, cambiare ed eliminare i tuoi prodotti',
+                'All\'interno troverai tantissime comode funzionalità per salvare, cambiare ed eliminare i tuoi prodotti.',
           ),
           const TextSpan(text: '.'),
         ],
@@ -335,7 +335,7 @@ class PopUpClass {
             child: const Padding(
               padding: const EdgeInsets.only(left: 12.0),
               child: const Text(
-                'L\'applicazione ti permetterà di accedere a tutte le funzionalità in maniera totalmente gratuita',
+                'L\'applicazione ti permetterà di accedere a tutte le funzionalità in maniera totalmente gratuita.',
                 style: const TextStyle(fontSize: 12.0),
               ),
             ),

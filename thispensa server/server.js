@@ -1,13 +1,28 @@
+/**
+ * SERVER NODE APP THISPENSA
+ * TUTTE LE RISPOSTE SONO IN FORMATO JSON
+ * contiene sempre errore per indicare se è avvenuta correttamente o no
+ * in caso di errore è anche presente un messaggio
+ */
 //#region ISTANZE MODULI E INIZIALIZZAZIONE
+
 //? CARICAMENTO DEI MODULI
+const https = require("https");
 const express = require("express");
 const mongo = require("mongodb");
 const session = require("express-session");
-const mongoFunctions = require("./mongo.js");
 const admin = require("firebase-admin");
-//const schedule = require("node-schedule");
+const schedule = require("node-schedule");
+const fs = require("fs");
+const mongoFunctions = require("./mongo.js");
 
+//? FILE PER AUTENTICAZIONE SU FIREBASE
 const serviceAccount = require("./thispensa-f54e0-firebase-adminsdk-nglrb-963863e898.json");
+
+//? FILE CHIAVI PER HTTPS
+const PRIVATEKEY = fs.readFileSync("privateKey.pem", "utf8");
+const CERTIFICATE = fs.readFileSync("certificate.pem", "utf8");
+const CREDENTIALS = { "key": PRIVATEKEY, "cert": CERTIFICATE };
 
 //? ISTANZA MONGO CLIENT
 const url = "mongodb+srv://server:ykBndA9L5mzMdsgy@cluster0.xsllc.mongodb.net/thispensa?retryWrites=true&w=majority";
@@ -15,9 +30,10 @@ const nomeDb = "thispensa";
 
 //? CREAZIONE DEL SERVER
 const app = express();
+var httpsServer = https.createServer(CREDENTIALS, app);
 app.listen(process.env.PORT || 13377, function () {
     mongoFunctions.settings(url, mongo.MongoClient);
-    //schedule.scheduleJob('0 0 * * *', () => { auto(); }); //? schedule di auto ogni notte a mezzanotte
+    schedule.scheduleJob('0 0 * * *', () => { auto(); }); //? schedule di auto ogni notte a mezzanotte
     console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
 
@@ -45,15 +61,20 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ "extended": true }));
 
-app.use("/", function (req, res, next) {
-    //Faccio il log di tutte le chiamate che arrivano al server, salvando anche l'ora
+//? GESTIONE RISORSE STATICHE
+app.use(express.static("./static"));
+
+//#endregion
+
+//? LOG DI TUTTE LE RICHIESTE
+app.use("*", function (req, res, next) {
+    //? Faccio il log di tutte le chiamate che arrivano al server, salvando anche l'ora
     let data = new Date();
     console.log(data.toLocaleTimeString() + ": " + req.originalUrl);
     next();
 });
 
 //#region gestioneLogin&Registrazione
-//!SONO PRIMA DEL CONTROLLO SULLA SESSION PERCHE' NON E' ANCORA AUTENTICATO
 
 app.post("/controllaEmail", function (req, res) {
     mongoFunctions.find(res, nomeDb, "utenti", { email: req.body.email }, {}, function (data) {
@@ -73,20 +94,35 @@ app.post("/login", function (req, res) {
         .verifyIdToken(req.body.tokenJWT)
         .then((decodedToken) => {
             admin.auth().getUser(req.body.uid).then((userRecord) => {
-                mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, async function (data) {
-                    if (data.length == 1) {
-                        req.session.auth = true;
-                        res.send(JSON.stringify({ errore: false }));
+                mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, async function (utente) {
+                    if (utente.length == 1) {
+                        //? aggiorno lo uid perchè se passa da email a google o viceversa lo uid cambia
+                        if (utente[0].uid != req.body.uid) {
+                            mongoFunctions.update(res, nomeDb, "utenti", { email: userRecord.email }, { $set: { uid: req.body.uid } }, {}, function (data) {
+                                mongoFunctions.update(res, nomeDb, "dispense", { _id: { $in: utente.dispense }, creatore: utente[0].uid }, { $set: { creatore: req.body.uid } }, {}, function (data) {
+                                    mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: { $in: utente.listeDellaSpesa }, creatore: utente[0].uid }, { $set: { creatore: req.body.uid } }, {}, function (data) {
+                                        req.session.auth = true;
+                                        res.send(JSON.stringify({ errore: false }));
+                                    });
+                                });
+                            });
+                        }
+                        else {
+                            req.session.auth = true;
+                            res.send(JSON.stringify({ errore: false }));
+                        }
                     } else
                         res.send(JSON.stringify({ errore: true }));
                 });
             })
                 .catch((error) => {
+                    console.log(error);
                     if (error.errorInfo.code == "auth/user-not-found")
                         res.send(JSON.stringify({ errore: true, messaggio: "Utente non trovato" }));
                 });
         })
         .catch((error) => {
+            console.log(error);
             res.send(JSON.stringify({ errore: true }));
         });
 });
@@ -95,14 +131,11 @@ app.post("/login", function (req, res) {
 // nome
 // cognome
 // email
-//? DATI OUTPUT
-// idListaDellaSpesa
-// idDispensa
 app.post("/registrazione", function (req, res) {
     admin.auth().getUser(req.body.uid).then((userRecord) => {
         let dato = {
-            _id: req.body.uid,
-            dataCreazione: new Date(Date.now()),
+            _id: new mongo.ObjectId(),
+            uid: req.body.uid,
             nome: req.body.nome,
             cognome: req.body.cognome,
             email: userRecord.email,
@@ -115,28 +148,44 @@ app.post("/registrazione", function (req, res) {
         });
     })
         .catch((error) => {
+            console.log(error);
             res.send(JSON.stringify({ errore: true }));
         });
 });
 
-//? chiamata sia per login sia per registrazione, non cambia
+//? chiamata sia per login sia per registrazione, non cambia, c'è il controllo
 app.post("/collegamentoAccountGoogle", function (req, res) {
     admin
         .auth()
         .verifyIdToken(req.body.tokenJWT)
         .then((decodedToken) => {
             admin.auth().getUser(req.body.uid).then((userRecord) => {
-                let dato = {
-                    _id: req.body.uid,
-                    dataCreazione: new Date(Date.now()),
-                    nome: userRecord.displayName,
-                    email: userRecord.email,
-                };
                 mongoFunctions.find(res, nomeDb, "utenti", { email: userRecord.email }, {}, function (utente) {
                     if (utente.length == 1) {
-                        req.session.auth = true;
-                        res.send(JSON.stringify({ errore: false, listaDellaSpesa: utente.listeDellaSpesa, dispensa: utente.dispense }));
+                        if (utente[0].uid != req.body.uid) {
+                            //? aggiorno lo uid perchè se passa da email a google o viceversa lo uid cambia
+                            mongoFunctions.update(res, nomeDb, "utenti", { email: userRecord.email }, { $set: { uid: req.body.uid } }, {}, function (data) {
+                                mongoFunctions.update(res, nomeDb, "dispense", { _id: { $in: utente.dispense }, creatore: utente[0].uid }, { $set: { creatore: req.body.uid } }, {}, function (data) {
+                                    mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: { $in: utente.listeDellaSpesa }, creatore: utente[0].uid }, { $set: { creatore: req.body.uid } }, {}, function (data) {
+                                        req.session.auth = true;
+                                        res.send(JSON.stringify({ errore: false }));
+                                    });
+                                });
+                            });
+                        }
+                        else {
+                            req.session.auth = true;
+                            res.send(JSON.stringify({ errore: false }));
+                        }
                     } else {
+                        let dato = {
+                            _id: mongo.ObjectId(),
+                            uid: req.body.uid,
+                            dataCreazione: new Date(Date.now()),
+                            nome: userRecord.displayName,
+                            email: userRecord.email,
+                            dispense: []
+                        };
                         mongoFunctions.insertOne(res, nomeDb, "liste_della_spesa", { elementi: [], creatore: req.body.uid }, function (listaDellaSpesa) {
                             dato.listeDellaSpesa = [listaDellaSpesa.insertedId];
                             mongoFunctions.insertOne(res, nomeDb, "utenti", dato, function (data) {
@@ -148,17 +197,21 @@ app.post("/collegamentoAccountGoogle", function (req, res) {
                 });
             })
                 .catch((error) => {
+                    console.log(error);
                     res.send(JSON.stringify({ errore: true }));
                 });
         })
         .catch((error) => {
+            console.log(error);
             res.send(JSON.stringify({ errore: true }));
         });
 });
 //#endregion
 
+//! DA QUI IN POI PASSA SOLO CHI E' AUTENTICATO SU FIREBASE
+
 //? CONTROLLO SESSION SU TUTTE LE RICHIESTE
-app.use("/", function (req, res, next) {
+app.use("*", function (req, res, next) {
     if (req.session.auth)
         next(); //! se autenticato passa alle funzioni successive
     else
@@ -171,19 +224,16 @@ app.use("/", function (req, res, next) {
                         next();
                 })
                     .catch((error) => {
+                        console.log(error);
                         if (error.errorInfo.code == "auth/user-not-found")
                             res.send(JSON.stringify({ errore: true, messaggio: "Utente non trovato" }));
                     });
             })
             .catch((error) => {
+                console.log(error);
                 res.send(JSON.stringify({ errore: true }));
             });
 });
-
-//? GESTIONE RISORSE STATICHE
-app.use("/", express.static("./static"));
-
-//#endregion
 
 //#region GESTIONE RICHIESTE
 /*
@@ -219,21 +269,21 @@ app.post("/ricercaProdottoBarcode", function (req, res, next) {
 
 //? Lettura dati relativi all'utente
 app.post("/leggiUtente", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { nome: 1, cognome: 1, email: 1 }, function (data) {
+    mongoFunctions.find(res, nomeDb, "utenti", { uid: req.body.uid }, { nome: 1, cognome: 1, email: 1 }, function (data) {
         res.send(JSON.stringify({ errore: false, data: data[0] }));
     });
 });
 
 //? Aggiornamento dati utente
 app.post("/aggiornaUtente", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $set: { nome: req.body.nome, cognome: req.body.cognome } }, {}, function (data) {
+    mongoFunctions.update(res, nomeDb, "utenti", { uid: req.body.uid }, { $set: { nome: req.body.nome, cognome: req.body.cognome } }, {}, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });
 
 //? AGGIORNAMENTO CODICE FCM
 app.post("/aggiornaTokenFCM", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $set: { tokenFCM: req.body.token } }, { upsert: true }, function (data) {
+    mongoFunctions.update(res, nomeDb, "utenti", { uid: req.body.uid }, { $set: { tokenFCM: req.body.token } }, { upsert: true }, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });
@@ -242,7 +292,7 @@ app.post("/aggiornaTokenFCM", function (req, res) {
 app.post("/eliminaAccount", function (req, res) {
     mongoFunctions.deleteMany(res, nomeDb, "dispense", { creatore: req.body.uid }, function (data) {
         mongoFunctions.deleteMany(res, nomeDb, "liste_della_spesa", { creatore: req.body.uid }, function (data) {
-            mongoFunctions.deleteMany(res, nomeDb, "utenti", { _id: req.body.uid }, function (data) {
+            mongoFunctions.deleteMany(res, nomeDb, "utenti", { uid: req.body.uid }, function (data) {
                 res.send(JSON.stringify({ errore: false }));
             });
         });
@@ -271,7 +321,7 @@ app.post("/ricercaProdotto", function (req, res) {
 //?DATI INPUT
 //oggetto prodotto
 app.post("/aggiornaProdotto", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "prodotti", { barcode: req.body.barcode }, { $set: req.body.prodotto }, { upsert: true }, function (data) {
+    mongoFunctions.update(res, nomeDb, "prodotti", { barcode: req.body.barcode }, { $set: req.body.prodotto }, {}, function (data) {
         res.send(JSON.stringify({ errore: false }));
     });
 });
@@ -289,17 +339,22 @@ app.post("/eliminaProdotto", function (req, res) {
 
 //? creazione della dispensa
 app.post("/creaDispensa", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, creatore: req.body.uid }, {}, function (data) {
-        if (data.length == 0)
-            mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid, condivisione: false }, function (dispense) {
-                mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
-                    res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
+    try {
+        mongoFunctions.find(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, creatore: req.body.uid }, {}, function (data) {
+            if (data.length == 0)
+                mongoFunctions.insertOne(res, nomeDb, "dispense", { nome: req.body.nomeDispensa, elementi: [], creatore: req.body.uid, condivisione: false }, function (dispense) {
+                    mongoFunctions.update(res, nomeDb, "utenti", { uid: req.body.uid }, { $push: { dispense: dispense.insertedId } }, {}, function (data) {
+                        res.send(JSON.stringify({ errore: false, idDispensa: dispense.insertedId, nome: req.body.nomeDispensa }));
+                    });
                 });
-            });
-        else {
-            res.send(JSON.stringify({ errore: true, messaggio: "Inserire un nome diverso, la dispensa è già presente!" }));
-        }
-    });
+            else {
+                res.send(JSON.stringify({ errore: true, messaggio: "Inserire un nome diverso, la dispensa è già presente!" }));
+            }
+        });
+    } catch (e) {
+        console.log(e);
+        res.send(JSON.stringify({ errore: true }));
+    }
 });
 
 app.post("/modificaCondivisioneDispensa", function (req, res) {
@@ -316,16 +371,21 @@ app.post("/Dispensa", function (req, res) {
 
 //? lettura di tutte le dispense di un utente
 app.post("/leggiIdDispense", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-        if (data[0]["dispense"] && data[0]["dispense"].length > 0) {
-            mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1, creatore: 1 }, function (data) {
-                res.send(JSON.stringify({ errore: false, dati: data }));
-            });
-        }
-        else {
-            res.send(JSON.stringify({ errore: false, dati: [] }));
-        }
-    });
+    try {
+        mongoFunctions.find(res, nomeDb, "utenti", { uid: req.body.uid }, { dispense: 1 }, function (data) {
+            if (data[0]["dispense"] && data[0]["dispense"].length > 0) {
+                mongoFunctions.find(res, nomeDb, "dispense", { _id: { $in: data[0]["dispense"] } }, { nome: 1, creatore: 1 }, function (data) {
+                    res.send(JSON.stringify({ errore: false, dati: data }));
+                });
+            }
+            else {
+                res.send(JSON.stringify({ errore: false, dati: [] }));
+            }
+        });
+    } catch (e) {
+        console.log(e);
+        res.send(JSON.stringify({ errore: true }));
+    }
 });
 
 //? Inserimento prodotto dispensa
@@ -354,22 +414,27 @@ app.post("/aggiornaProdottoDispensa", function (req, res) {
 
 //? Lettura elementi dentro una dispensa
 app.post("/leggiDispensa", function (req, res) {
-    if (req.body.idDispensa != "default") {
-        mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { elementi: 1 }, function (data) {
-            res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
-        });
-    }
-    else {
-        mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, { dispense: 1 }, function (data) {
-            mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
+    try {
+        if (req.body.idDispensa != "default") {
+            mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa) }, { elementi: 1 }, function (data) {
                 res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
             });
-        });
+        }
+        else {
+            mongoFunctions.find(res, nomeDb, "utenti", { uid: req.body.uid }, { dispense: 1 }, function (data) {
+                mongoFunctions.find(res, nomeDb, "dispense", { _id: mongo.ObjectID(data[0]["dispense"][0]) }, { elementi: 1 }, function (data) {
+                    res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
+                });
+            });
+        }
+    } catch (e) {
+        console.log(e);
+        res.send(JSON.stringify({ errore: true }));
     }
 });
 
 app.post("/eliminaDispensa", function (req, res) {
-    mongoFunctions.update(res, nomeDb, "utenti", { _id: req.body.uid }, { $pull: { dispense: mongo.ObjectID(req.body.idDispensa) } }, {}, function (data) {
+    mongoFunctions.update(res, nomeDb, "utenti", { uid: req.body.uid }, { $pull: { dispense: mongo.ObjectID(req.body.idDispensa) } }, {}, function (data) {
         mongoFunctions.deleteMany(res, nomeDb, "dispense", { _id: mongo.ObjectID(req.body.idDispensa), creatore: req.body.uid }, function (data) {
             res.send(JSON.stringify({ errore: false }));
         });
@@ -399,21 +464,30 @@ app.post("/inserisciProdottoListaSpesa", function (req, res) {
         priorita: req.body.priorita,
         status: req.body.status,
     };
-    //? Con upsert se esiste fa l'update se non esiste lo inserisce
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
-        mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectID(data[0].listeDellaSpesa[0]) }, { $push: { "elementi": dato } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false }));
+    try {
+        //? Con upsert se esiste fa l'update se non esiste lo inserisce
+        mongoFunctions.find(res, nomeDb, "utenti", { uid: req.body.uid }, {}, function (data) {
+            mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectID(data[0].listeDellaSpesa[0]) }, { $push: { "elementi": dato } }, {}, function (data) {
+                res.send(JSON.stringify({ errore: false }));
+            });
         });
-    });
+    } catch (e) {
+        console.log(e);
+        res.send(JSON.stringify({ errore: true }));
+    }
 });
 
 
 app.post("/leggiListaSpesa", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
-        mongoFunctions.find(res, nomeDb, "liste_della_spesa", { _id: data[0].listeDellaSpesa[0] }, { elementi: 1 }, function (data) {
-            res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
+    try {
+        mongoFunctions.find(res, nomeDb, "utenti", { uid: req.body.uid }, {}, function (data) {
+            mongoFunctions.find(res, nomeDb, "liste_della_spesa", { _id: data[0].listeDellaSpesa[0] }, { elementi: 1 }, function (data) {
+                res.send(JSON.stringify({ errore: false, prodotti: data[0]["elementi"] }));
+            });
         });
-    });
+    } catch (e) {
+        res.send(JSON.stringify({ errore: true }));
+    }
 });
 
 app.post("/aggiornaProdottoListaSpesa", function (req, res) {
@@ -424,19 +498,29 @@ app.post("/aggiornaProdottoListaSpesa", function (req, res) {
         priorita: req.body.priorita,
         status: req.body.status,
     };
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
-        mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectId(data[0].listeDellaSpesa[0]), "elementi.idProdotto": mongo.ObjectId(req.body.idProdotto) }, { $set: { "elementi.$": dato } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false }));
+    try {
+        mongoFunctions.find(res, nomeDb, "utenti", { uid: req.body.uid }, {}, function (data) {
+            mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectId(data[0].listeDellaSpesa[0]), "elementi.idProdotto": mongo.ObjectId(req.body.idProdotto) }, { $set: { "elementi.$": dato } }, {}, function (data) {
+                res.send(JSON.stringify({ errore: false }));
+            });
         });
-    });
+    } catch (e) {
+        console.log(e);
+        res.send(JSON.stringify({ errore: true }));
+    }
 });
 
 app.post("/eliminaProdottoListaSpesa", function (req, res) {
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: req.body.uid }, {}, function (data) {
-        mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectID(data[0].listeDellaSpesa[0]) }, { $pull: { elementi: { idProdotto: mongo.ObjectID(req.body.idProdotto) } } }, {}, function (data) {
-            res.send(JSON.stringify({ errore: false }));
+    try {
+        mongoFunctions.find(res, nomeDb, "utenti", { uid: req.body.uid }, {}, function (data) {
+            mongoFunctions.update(res, nomeDb, "liste_della_spesa", { _id: mongo.ObjectID(data[0].listeDellaSpesa[0]) }, { $pull: { elementi: { idProdotto: mongo.ObjectID(req.body.idProdotto) } } }, {}, function (data) {
+                res.send(JSON.stringify({ errore: false }));
+            });
         });
-    });
+    } catch (e) {
+        console.log(e);
+        res.send(JSON.stringify({ errore: true }));
+    }
 });
 
 //#endregion
@@ -463,7 +547,7 @@ function auto() {
                                     dataScadenza: new Date(prodotto.dataScadenza)
                                 }
                             };
-                            sendNotification(utente._id, message);
+                            sendNotification(utente.uid, message);
                         }
                     });
                 });
@@ -474,7 +558,7 @@ function auto() {
 
 function sendNotification(id, message) {
     // This registration token comes from the client FCM SDKs.
-    mongoFunctions.find(res, nomeDb, "utenti", { _id: mongo.ObjectID(id) }, { tokenFCM: 1 }, function (data) {
+    mongoFunctions.find(res, nomeDb, "utenti", { uid: mongo.ObjectID(id) }, { tokenFCM: 1 }, function (data) {
         message.token = data[0].tokenFCM;
     });
 

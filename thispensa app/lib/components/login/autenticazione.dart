@@ -293,11 +293,13 @@ class _registerPage extends State<RegisterPage> {
         );
         EasyLoading.dismiss();
       } else {
+        try{
         final User user = (await _auth.createUserWithEmailAndPassword(
           email: _emailController.text,
           password: _passwordController.text,
         ))
             .user;
+        
         if (user != null) {
           var params = {
             "uid": user.uid.toString(),
@@ -340,6 +342,16 @@ class _registerPage extends State<RegisterPage> {
             }
           });
         } else {
+          _success = false;
+          EasyLoading.dismiss();
+        }
+        }catch(e){
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: Colors.red,
+              content: Text('La password deve essere almeno di 6 caratteri'),
+            ),
+          );
           _success = false;
           EasyLoading.dismiss();
         }

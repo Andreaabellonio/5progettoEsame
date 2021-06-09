@@ -96,18 +96,6 @@ class AccountState extends State<Account> {
             padding: EdgeInsets.all(10.0),
             child: Column(
               children: <Widget>[
-                /*new Container(
-                height: 80.0,
-                width: 80.0,
-                child: new Image.asset('/assets/images/cactus.jpg'),
-                decoration: new BoxDecoration(
-                    color: const Color(0xff7c94b6),
-                    borderRadius: BorderRadius.all(const Radius.circular(50.0)),
-                    border: Border.all(color: const Color(0xFF28324E)),
-                ),
-
-                ),*/
-
                 //CREAZIONE DELLE DUE TEXTBOX
                 Form(
                     key: _formKey1,
@@ -153,7 +141,6 @@ class AccountState extends State<Account> {
                         ),
                       ],
                     )),
-                //textBoxController("E-Mail", _emailController),
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   alignment: Alignment.center,
@@ -419,7 +406,6 @@ class AccountState extends State<Account> {
                                               .userInteractions = false;
                                           EasyLoading.show();
                                           try {
-                                            await _auth.currentUser.delete();
                                             var params = {
                                               "uid": _auth.currentUser.uid
                                                   .toString(),
@@ -437,33 +423,42 @@ class AccountState extends State<Account> {
                                                   HttpHeaders.contentTypeHeader:
                                                       "application/json"
                                                 }).then((response) async {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                      "Account eliminato con successo"),
-                                                ),
-                                              );
-                                              await Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          MyHomePage()));
-                                              EasyLoading.dismiss();
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                  backgroundColor: Colors.red,
-                                                  content: Text(
-                                                      "Errore durante l'eliminazione"),
-                                                ),
-                                              );
+                                              Map data =
+                                                  jsonDecode(response.body);
+                                              if (!data["errore"]) {
+                                                await _auth.currentUser
+                                                    .delete();
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        "Account eliminato con successo"),
+                                                  ),
+                                                );
+                                                EasyLoading.dismiss();
+                                                await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            PaginaAutenticazione()));
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    backgroundColor: Colors.red,
+                                                    content: Text(
+                                                        'Errore nell\'eliminazione dell\'account'),
+                                                  ),
+                                                );
+                                              }
                                             });
                                           } catch (e) {
+                                            EasyLoading.dismiss();
                                             print(e);
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               SnackBar(
+                                                backgroundColor: Colors.red,
                                                 content: Text(
                                                     'Errore nell\'eliminazione dell\'account $e'),
                                               ),

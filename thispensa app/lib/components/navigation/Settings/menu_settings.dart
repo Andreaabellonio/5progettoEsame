@@ -229,12 +229,6 @@ class Settings {
                                                         false;
                                                     EasyLoading.show();
                                                     await _signOut();
-                                                    Navigator.pushReplacement(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (BuildContext
-                                                                    context) =>
-                                                                PaginaAutenticazione()));
                                                   },
                                                 ),
                                               ),
